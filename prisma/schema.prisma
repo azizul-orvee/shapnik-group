@@ -1,0 +1,149 @@
+// Shomobay Shomiti — savings-only cooperative society management.
+// Multi-tenant from day one: every domain row carries organizationId.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  TREASURER
+  COMMITTEE
+  MEMBER
+}
+
+enum MemberStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum TransactionType {
+  IN
+  OUT
+}
+
+enum ContributionType {
+  /// The recurring monthly savings contribution.
+  MONTHLY
+  /// The one-off admission fee, payable in one go or in instalments.
+  ONE_TIME
+}
+
+model Organization {
+  id   String @id @default(cuid())
+  name String
+
+  /// What each member owes per month.
+  monthlyAmount Decimal @default(6000) @db.Decimal(12, 2)
+  /// One-off admission fee, owed once per member for the lifetime of their membership.
+  oneTimeFee    Decimal @default(28000) @db.Decimal(12, 2)
+
+  /// The society's operating window, as UTC-midnight firsts-of-the-month.
+  /// Nothing outside it can be recorded or reported on.
+  startMonth DateTime @default(dbgenerated("'2026-01-01'::date")) @db.Date
+  endMonth   DateTime @default(dbgenerated("'2027-12-01'::date")) @db.Date
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members       Member[]
+  users         User[]
+  contributions Contribution[]
+  transactions  FundTransaction[]
+}
+
+model Member {
+  id             String       @id @default(cuid())
+  organizationId String
+  memberId       String // human-readable code, unique within the org
+  name           String
+  phone          String?
+  joinDate       DateTime     @default(now())
+  status         MemberStatus @default(ACTIVE)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization  Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contributions Contribution[]
+  users         User[]
+
+  @@unique([organizationId, memberId])
+  @@index([organizationId, status])
+  @@index([organizationId, name])
+}
+
+model Contribution {
+  id             String           @id @default(cuid())
+  organizationId String
+  memberId       String
+  type           ContributionType @default(MONTHLY)
+  amount         Decimal          @db.Decimal(12, 2)
+  /// First day (UTC) of the month this payment covers, e.g. 2026-08-01.
+  /// Null for ONE_TIME payments, which are not tied to a month. Postgres treats
+  /// nulls as distinct in a unique index, so a member may pay the one-time fee
+  /// in several instalments while still being limited to one row per month.
+  paidForMonth   DateTime?        @db.Date
+  paidOnDate     DateTime         @default(now())
+  note           String?
+  recordedById   String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  member       Member           @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  recordedBy   User?            @relation("ContributionRecordedBy", fields: [recordedById], references: [id], onDelete: SetNull)
+  transaction  FundTransaction?
+
+  // One contribution row per member per covered month.
+  @@unique([memberId, paidForMonth])
+  @@index([organizationId, type])
+  @@index([organizationId, paidForMonth])
+  @@index([organizationId, paidOnDate])
+  @@index([memberId])
+}
+
+model FundTransaction {
+  id             String          @id @default(cuid())
+  organizationId String
+  type           TransactionType
+  amount         Decimal         @db.Decimal(12, 2)
+  description    String
+  date           DateTime        @default(now())
+  // Set when this ledger row was auto-created from a contribution.
+  contributionId String?         @unique
+  recordedById   String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contribution Contribution? @relation(fields: [contributionId], references: [id], onDelete: Cascade)
+  recordedBy   User?         @relation("TransactionRecordedBy", fields: [recordedById], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, date])
+  @@index([organizationId, type])
+}
+
+model User {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  email          String   @unique
+  passwordHash   String
+  role           Role     @default(MEMBER)
+  // Populated for MEMBER-role logins so they can see their own records.
+  memberId       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization          Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  member                Member?           @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  recordedContributions Contribution[]    @relation("ContributionRecordedBy")
+  recordedTransactions  FundTransaction[] @relation("TransactionRecordedBy")
+
+  @@index([organizationId])
+}
