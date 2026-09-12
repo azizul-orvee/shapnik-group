@@ -17,7 +17,11 @@ export default async function NewMemberPage() {
         defaultValues={{
           name: "",
           memberId: suggestedCode,
-          phone: undefined,
+          phone: "",
+          nationalId: "",
+          nomineeName: "",
+          nomineeNationalId: "",
+          nomineePhone: "",
           joinDate: new Date().toISOString().slice(0, 10),
           status: "ACTIVE",
         }}

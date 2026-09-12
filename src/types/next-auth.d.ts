@@ -3,6 +3,7 @@ import type { Role } from "@/generated/prisma/enums";
 
 declare module "next-auth" {
   interface User {
+    username?: string | null;
     role: Role;
     organizationId: string;
     memberId?: string | null;
@@ -11,6 +12,7 @@ declare module "next-auth" {
   interface Session {
     user: {
       id: string;
+      username: string | null;
       role: Role;
       organizationId: string;
       memberId: string | null;
@@ -22,6 +24,7 @@ declare module "next-auth" {
 // target the module that actually declares the interface.
 declare module "@auth/core/jwt" {
   interface JWT {
+    username?: string | null;
     role: Role;
     organizationId: string;
     memberId?: string | null;

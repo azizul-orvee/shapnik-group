@@ -72,7 +72,7 @@ export function MemberStatementDocument({ statement }: { statement: MemberStatem
             {rows.map((row, index) => (
               <View key={row.id} style={index === rows.length - 1 ? styles.trLast : styles.tr} wrap={false}>
                 <Text style={[styles.td, { width: COLS.month }]}>
-                  {row.monthKey ? formatMonthKey(row.monthKey) : "One-time fee"}
+                  {row.monthKey ? formatMonthKey(row.monthKey) : `One-time fee ${row.paidForYear}`}
                 </Text>
                 <Text style={[styles.td, { width: COLS.paid }]}>{pdfDate(row.paidOnDate)}</Text>
                 <Text style={[styles.td, { width: COLS.note }]}>

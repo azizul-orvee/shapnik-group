@@ -52,6 +52,25 @@ export function formatDate(date: Date): string {
   });
 }
 
+/** Calendar dates for display use Bangladesh time, not the viewer's clock. */
+export const DHAKA_TIME_ZONE = "Asia/Dhaka";
+
+/** Today's date in Dhaka, as `YYYY-MM-DD`. */
+export function dhakaDateKey(now = new Date()): string {
+  return now.toLocaleDateString("en-CA", { timeZone: DHAKA_TIME_ZONE });
+}
+
+/** Today's date in Dhaka, e.g. `Mon, 31 Aug 2026`. */
+export function formatDhakaToday(now = new Date()): string {
+  return now.toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: DHAKA_TIME_ZONE,
+  });
+}
+
 /** Shifts a month key by `delta` months. `addMonths("2026-01", -1) === "2025-12"`. */
 export function addMonths(monthKey: string, delta: number): string {
   const date = monthKeyToDate(monthKey);
@@ -69,6 +88,16 @@ export function monthRange(start: string, end: string): string[] {
     cursor = addMonths(cursor, 1);
   }
   return keys;
+}
+
+/** How many calendar months sit in `[start, end]`, inclusive. */
+export function monthCount(start: string, end: string): number {
+  return monthRange(start, end).length;
+}
+
+/** January = 0. */
+export function monthIndex(monthKey: string): number {
+  return monthKeyToDate(monthKey).getUTCMonth();
 }
 
 /** The last `count` months ending at `endMonthKey`, oldest first. */
@@ -94,6 +123,14 @@ export function clampMonthKey(monthKey: string, start: string, end: string): str
 /** Whether a month key falls inside `[start, end]`. */
 export function isMonthInWindow(monthKey: string, start: string, end: string): boolean {
   return monthKey >= start && monthKey <= end;
+}
+
+/** The year plan whose season contains `monthKey`, if any. */
+export function planForMonthKey<T extends { startMonthKey: string; endMonthKey: string }>(
+  plans: T[],
+  monthKey: string,
+): T | undefined {
+  return plans.find((plan) => isMonthInWindow(monthKey, plan.startMonthKey, plan.endMonthKey));
 }
 
 /** Every year touched by `[start, end]`, newest first. */

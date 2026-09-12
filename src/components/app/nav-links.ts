@@ -12,6 +12,7 @@ export type NavIcon =
   | "members"
   | "fund"
   | "reports"
+  | "years"
   | "accounts";
 
 export type NavLink = {
@@ -22,7 +23,7 @@ export type NavLink = {
   roles: Role[];
 };
 
-const ORG_ROLES: Role[] = ["ADMIN", "TREASURER", "COMMITTEE"];
+const ORG_ROLES: Role[] = ["ADMIN"];
 
 export const NAV_LINKS: NavLink[] = [
   {
@@ -66,6 +67,13 @@ export const NAV_LINKS: NavLink[] = [
     shortLabel: "Reports",
     icon: "reports",
     roles: ORG_ROLES,
+  },
+  {
+    href: "/years",
+    label: "Years",
+    shortLabel: "Years",
+    icon: "years",
+    roles: ["ADMIN"],
   },
   {
     href: "/users",

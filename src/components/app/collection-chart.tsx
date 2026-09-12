@@ -75,6 +75,8 @@ function ChartTooltip({
       <p className="mb-1.5 font-medium">{row.label}</p>
       {row.future && row.paid === 0 ? (
         <p className="text-muted-foreground">Not due yet</p>
+      ) : !row.inSeason ? (
+        <p className="text-muted-foreground">Society was not running this month</p>
       ) : (
         <ul className="space-y-1">
           <li className="flex items-center gap-2">

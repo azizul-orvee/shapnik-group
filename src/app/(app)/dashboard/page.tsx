@@ -57,8 +57,8 @@ export default async function DashboardPage() {
       />
 
       {/* Hero — the one number the society leads with. */}
-      <Card className="mb-4 overflow-hidden">
-        <CardContent className="flex flex-col gap-6 px-4 py-2 sm:flex-row sm:items-center sm:gap-8">
+      <Card className="bg-brand-wash ring-brand/15 mb-4 overflow-hidden">
+        <CardContent className="flex flex-col gap-6 px-4 py-3 sm:flex-row sm:items-center sm:gap-8">
           <ProgressRing
             value={progress.completion}
             label={`${yearPct}%`}
@@ -71,12 +71,12 @@ export default async function DashboardPage() {
               <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                 Collected this year
               </p>
-              <p className="mt-1 text-3xl font-semibold sm:text-4xl">
+              <p className="font-heading mt-1 text-[2.1rem] leading-none font-bold tracking-tight tabular-nums sm:text-5xl">
                 {formatTakaShort(progress.totalCollected)}
               </p>
-              <p className="text-muted-foreground mt-1 text-sm">
+              <p className="text-muted-foreground mt-2 text-sm">
                 of {formatTakaShort(progress.totalTarget)} target ·{" "}
-                {progress.memberCount} members × {formatTakaShort(progress.settings.annualTarget)}
+                {progress.memberCount} members × {formatTakaShort(progress.plan.annualTarget)}
               </p>
             </div>
 
@@ -104,7 +104,7 @@ export default async function DashboardPage() {
         <StatCard
           label="Fully paid up"
           value={`${progress.fullyPaid}/${progress.memberCount}`}
-          hint={`Cleared all ${formatTakaShort(progress.settings.annualTarget)}`}
+          hint={`Cleared all ${formatTakaShort(progress.plan.annualTarget)}`}
           icon={CheckCircle2}
           tone={progress.fullyPaid > 0 ? "positive" : "default"}
         />
@@ -135,7 +135,7 @@ export default async function DashboardPage() {
           <CardHeader>
             <CardTitle className="text-base">One-time fee</CardTitle>
             <CardDescription>
-              {formatTakaShort(progress.settings.oneTimeFee)} owed once per member.
+              {formatTakaShort(progress.plan.oneTimeFee)} owed this year per member.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
@@ -150,19 +150,19 @@ export default async function DashboardPage() {
               <div className="min-w-0 text-sm">
                 <p className="text-muted-foreground">Members who have cleared it</p>
                 <p className="mt-2 text-2xl font-semibold">
-                  {formatTakaShort(progress.oneTimeLifetime)}
+                  {formatTakaShort(progress.oneTimeCollected)}
                 </p>
                 <p className="text-muted-foreground text-xs">
-                  of {formatTakaShort(progress.oneTimeLifetimeTarget)} collected
+                  of {formatTakaShort(progress.oneTimeTarget)} collected
                 </p>
               </div>
             </div>
 
             <div className="space-y-2">
               <Meter
-                target={progress.oneTimeLifetimeTarget}
+                target={progress.oneTimeTarget}
                 segments={[
-                  { label: "One-time fee", value: progress.oneTimeLifetime, tone: "onetime" },
+                  { label: "One-time fee", value: progress.oneTimeCollected, tone: "onetime" },
                 ]}
               />
               <p className="text-muted-foreground text-xs">

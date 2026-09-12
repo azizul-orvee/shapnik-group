@@ -85,9 +85,73 @@ export function MemberForm({ memberId, defaultValues }: Props) {
         <Input id="memberId" autoCapitalize="characters" {...register("memberId")} />
       </Field>
 
-      <Field id="phone" label="Phone" error={errors.phone?.message} hint="Optional.">
-        <Input id="phone" type="tel" inputMode="tel" autoComplete="tel" {...register("phone")} />
+      <Field id="phone" label="Phone" error={errors.phone?.message} hint="11 digits, e.g. 01712345678.">
+        <Input
+          id="phone"
+          type="tel"
+          inputMode="numeric"
+          autoComplete="tel"
+          placeholder="01712345678"
+          {...register("phone")}
+        />
       </Field>
+
+      <Field
+        id="nationalId"
+        label="National ID (NID)"
+        error={errors.nationalId?.message}
+        hint={
+          isEdit
+            ? "10–17 digits. Changing it also changes the password they sign in with."
+            : "10–17 digits. This is also their sign-in password."
+        }
+      >
+        <Input
+          id="nationalId"
+          inputMode="numeric"
+          autoComplete="off"
+          placeholder="1990123456"
+          {...register("nationalId")}
+        />
+      </Field>
+
+      <fieldset className="space-y-4 rounded-lg border p-4">
+        <legend className="px-1 text-sm font-medium">Nominee</legend>
+
+        <Field id="nomineeName" label="Nominee name" error={errors.nomineeName?.message}>
+          <Input id="nomineeName" autoComplete="off" {...register("nomineeName")} />
+        </Field>
+
+        <Field
+          id="nomineeNationalId"
+          label="Nominee NID"
+          error={errors.nomineeNationalId?.message}
+          hint="10–17 digits."
+        >
+          <Input
+            id="nomineeNationalId"
+            inputMode="numeric"
+            autoComplete="off"
+            {...register("nomineeNationalId")}
+          />
+        </Field>
+
+        <Field
+          id="nomineePhone"
+          label="Nominee phone"
+          error={errors.nomineePhone?.message}
+          hint="Optional."
+        >
+          <Input
+            id="nomineePhone"
+            type="tel"
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="01712345678"
+            {...register("nomineePhone")}
+          />
+        </Field>
+      </fieldset>
 
       <Field id="joinDate" label="Join date" error={errors.joinDate?.message}>
         <Input id="joinDate" type="date" {...register("joinDate")} />
@@ -114,6 +178,13 @@ export function MemberForm({ memberId, defaultValues }: Props) {
           </SelectContent>
         </Select>
       </Field>
+
+      {isEdit ? null : (
+        <p className="text-muted-foreground rounded-md border border-dashed p-3 text-xs">
+          A sign-in is created automatically: the member signs in with their{" "}
+          <strong>member ID</strong> and their <strong>NID</strong> as the password.
+        </p>
+      )}
 
       <div className="flex gap-2 pt-2">
         <Button type="submit" disabled={isSubmitting}>

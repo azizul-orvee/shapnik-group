@@ -21,6 +21,7 @@ export type MemberStatement = {
     type: "MONTHLY" | "ONE_TIME";
     /** Null for one-time fee instalments, which cover no particular month. */
     monthKey: string | null;
+    paidForYear: number;
     amount: number;
     paidOnDate: Date;
     note: string | null;
@@ -53,6 +54,7 @@ export async function buildMemberStatement(
     id: c.id,
     type: c.type,
     monthKey: c.paidForMonth ? dateToMonthKey(c.paidForMonth) : null,
+    paidForYear: c.paidForYear,
     amount: c.amount.toNumber(),
     paidOnDate: c.paidOnDate,
     note: c.note,

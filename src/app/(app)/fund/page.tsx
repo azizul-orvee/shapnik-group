@@ -70,7 +70,7 @@ export default async function FundPage() {
         <StatCard
           label="Contributing members"
           value={String(progress.memberCount)}
-          hint={`${formatTakaShort(progress.settings.annualTarget)} each per year`}
+          hint={`${formatTakaShort(progress.plan.annualTarget)} each per year`}
           icon={Users}
         />
       </div>

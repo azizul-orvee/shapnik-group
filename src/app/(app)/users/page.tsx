@@ -13,8 +13,7 @@ import { PageHeader } from "@/components/app/page-header";
 import { requireSession } from "@/lib/session";
 import { canManageUsers, ROLE_LABELS } from "@/lib/rbac";
 import { listUsers } from "@/server/users";
-import { listMembers } from "@/server/members";
-import { AddUserButton } from "./users-client";
+import { formatDate } from "@/lib/dates";
 
 export const metadata: Metadata = { title: "Accounts" };
 
@@ -22,21 +21,13 @@ export default async function UsersPage() {
   const session = await requireSession();
   if (!canManageUsers(session.role)) redirect("/dashboard");
 
-  const [users, members] = await Promise.all([
-    listUsers(session.organizationId),
-    listMembers(session.organizationId, { status: "ACTIVE" }),
-  ]);
+  const users = await listUsers(session.organizationId);
 
   return (
     <>
       <PageHeader
         title="Accounts"
-        description="Logins for this society and what each one can see."
-        action={
-          <AddUserButton
-            members={members.map((m) => ({ id: m.id, name: m.name, memberId: m.memberId }))}
-          />
-        }
+        description="Every sign-in for this society. Member logins are created with the member."
       />
 
       <div className="overflow-x-auto rounded-lg border">
@@ -44,8 +35,9 @@ export default async function UsersPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead className="hidden sm:table-cell">Email</TableHead>
+              <TableHead>Sign-in ID</TableHead>
               <TableHead className="hidden md:table-cell">Linked member</TableHead>
+              <TableHead className="hidden sm:table-cell">Created</TableHead>
               <TableHead className="text-right">Role</TableHead>
             </TableRow>
           </TableHeader>
@@ -54,13 +46,16 @@ export default async function UsersPage() {
               <TableRow key={user.id}>
                 <TableCell className="font-medium">
                   {user.name}
-                  <span className="text-muted-foreground block text-xs sm:hidden">
-                    {user.email}
+                  <span className="text-muted-foreground block font-mono text-xs sm:hidden">
+                    {user.username ?? "—"}
                   </span>
                 </TableCell>
-                <TableCell className="hidden sm:table-cell">{user.email}</TableCell>
+                <TableCell className="font-mono text-xs">{user.username ?? "—"}</TableCell>
                 <TableCell className="text-muted-foreground hidden md:table-cell">
                   {user.member ? `${user.member.memberId} — ${user.member.name}` : "—"}
+                </TableCell>
+                <TableCell className="text-muted-foreground hidden text-xs sm:table-cell">
+                  {formatDate(user.createdAt)}
                 </TableCell>
                 <TableCell className="text-right">
                   <Badge variant={user.role === "ADMIN" ? "default" : "secondary"}>
@@ -72,6 +67,11 @@ export default async function UsersPage() {
           </TableBody>
         </Table>
       </div>
+
+      <p className="text-muted-foreground mt-3 text-xs">
+        Everyone signs in with their ID and their NID. Adding a member creates their
+        login automatically.
+      </p>
     </>
   );
 }

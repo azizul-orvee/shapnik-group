@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   BanknoteArrowUp,
   CalendarCheck2,
+  CalendarRange,
   FileText,
   LayoutDashboard,
   ShieldCheck,
@@ -22,6 +23,7 @@ const ICONS: Record<NavIcon, LucideIcon> = {
   members: Users,
   fund: Wallet,
   reports: FileText,
+  years: CalendarRange,
   accounts: ShieldCheck,
 };
 
@@ -43,13 +45,26 @@ export function SidebarNav({ links }: { links: NavLink[] }) {
             href={link.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all",
               active
-                ? "bg-accent text-accent-foreground"
-                : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
+                ? "bg-brand-soft text-accent-foreground shadow-xs"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
           >
-            <Icon className="size-4 shrink-0" />
+            {/* Brand rail marks the current section. */}
+            <span
+              className={cn(
+                "bg-brand absolute top-1/2 left-0 h-5 w-1 -translate-y-1/2 rounded-r-full transition-all",
+                active ? "opacity-100" : "opacity-0",
+              )}
+              aria-hidden
+            />
+            <Icon
+              className={cn(
+                "size-4.5 shrink-0 transition-colors",
+                active ? "text-brand" : "text-muted-foreground group-hover:text-foreground",
+              )}
+            />
             {link.label}
           </Link>
         );
@@ -62,9 +77,9 @@ export function SidebarNav({ links }: { links: NavLink[] }) {
 export function BottomNav({ links }: { links: NavLink[] }) {
   const pathname = usePathname();
   return (
-    <nav className="bg-background/95 fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur md:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] md:hidden">
       <ul
-        className="mx-auto grid max-w-lg"
+        className="bg-card/90 ring-border/70 shadow-lg mx-auto grid max-w-md gap-0.5 rounded-2xl p-1.5 ring-1 backdrop-blur-xl"
         style={{ gridTemplateColumns: `repeat(${links.length}, minmax(0, 1fr))` }}
       >
         {links.map((link) => {
@@ -76,18 +91,24 @@ export function BottomNav({ links }: { links: NavLink[] }) {
                 href={link.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex flex-col items-center gap-1 px-1 py-2 text-[11px] font-medium transition-colors",
-                  active ? "text-primary" : "text-muted-foreground",
+                  "relative flex flex-col items-center gap-1 rounded-xl px-1 py-1.5 text-[10.5px] font-medium transition-colors",
+                  active ? "text-brand" : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                <Icon className="size-5" />
-                <span className="truncate">{link.shortLabel}</span>
+                <span
+                  className={cn(
+                    "flex size-8 items-center justify-center rounded-lg transition-all",
+                    active ? "bg-brand-soft" : "bg-transparent",
+                  )}
+                >
+                  <Icon className="size-5" />
+                </span>
+                <span className="max-w-full truncate">{link.shortLabel}</span>
               </Link>
             </li>
           );
         })}
       </ul>
-      <div className="h-[env(safe-area-inset-bottom)]" />
     </nav>
   );
 }

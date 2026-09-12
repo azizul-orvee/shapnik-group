@@ -21,29 +21,33 @@ import {
   type ContributionFormInput,
 } from "@/lib/validation";
 import { apiRequest, ApiRequestError } from "@/lib/http";
-import { currentMonthKey, formatMonthKey, monthRange } from "@/lib/dates";
+import { currentMonthKey, formatMonthKey, monthRange, planForMonthKey } from "@/lib/dates";
 
 export type MemberOption = { id: string; name: string; memberId: string };
 
+type PlanOption = {
+  year: number;
+  monthlyAmount: number;
+  oneTimeFee: number;
+  startMonthKey: string;
+  endMonthKey: string;
+};
+
 export function ContributionForm({
   members,
-  settings,
+  plans,
+  window,
   defaultValues,
 }: {
   members: MemberOption[];
-  settings: {
-    monthlyAmount: number;
-    oneTimeFee: number;
-    startMonthKey: string;
-    endMonthKey: string;
-  };
+  plans: PlanOption[];
+  window: { startMonthKey: string; endMonthKey: string };
   defaultValues: ContributionFormInput;
 }) {
   const router = useRouter();
-  // Every month the society runs, newest first. Future months are offered too:
-  // members do pay ahead, sometimes the whole year at once.
   const thisMonth = currentMonthKey();
-  const monthOptions = monthRange(settings.startMonthKey, settings.endMonthKey).reverse();
+  const monthOptions = monthRange(window.startMonthKey, window.endMonthKey).reverse();
+  const years = plans.map((p) => p.year);
 
   const {
     register,
@@ -58,6 +62,10 @@ export function ContributionForm({
   });
 
   const isMonthly = (watch("type") ?? "MONTHLY") === "MONTHLY";
+  const selectedMonth = watch("paidForMonth");
+  const selectedYear = watch("paidForYear");
+  const monthPlan = selectedMonth ? planForMonthKey(plans, selectedMonth) : plans[0];
+  const feePlan = plans.find((p) => p.year === Number(selectedYear)) ?? plans[0];
 
   async function onSubmit(values: ContributionCreateInput) {
     try {
@@ -81,20 +89,22 @@ export function ContributionForm({
         id="type"
         label="Payment type"
         error={errors.type?.message}
-        hint="The one-time admission fee can be taken in instalments."
+        hint="The year's extra fee can be taken in instalments."
       >
         <Select
           value={watch("type") ?? "MONTHLY"}
           onValueChange={(value) => {
             const next = value as ContributionFormInput["type"];
             setValue("type", next, { shouldDirty: true });
-            // Prefill the usual amount for the type; the treasurer can still
-            // override it for a part payment.
-            setValue(
-              "amount",
-              next === "ONE_TIME" ? settings.oneTimeFee : settings.monthlyAmount,
-              { shouldDirty: true },
-            );
+            if (next === "ONE_TIME") {
+              const plan = feePlan ?? plans[0];
+              if (plan) {
+                setValue("paidForYear", plan.year, { shouldDirty: true });
+                setValue("amount", plan.oneTimeFee, { shouldDirty: true });
+              }
+            } else if (monthPlan) {
+              setValue("amount", monthPlan.monthlyAmount, { shouldDirty: true });
+            }
           }}
         >
           <SelectTrigger id="type" className="w-full">
@@ -126,30 +136,62 @@ export function ContributionForm({
       </Field>
 
       {isMonthly ? (
-      <Field
-        id="paidForMonth"
-        label="Covers month"
-        error={errors.paidForMonth?.message}
-        hint="Which monthly contribution this payment settles — a later month is fine if they are paying ahead."
-      >
-        <Select
-          value={watch("paidForMonth")}
-          onValueChange={(value) => setValue("paidForMonth", value, { shouldDirty: true })}
+        <Field
+          id="paidForMonth"
+          label="Covers month"
+          error={errors.paidForMonth?.message}
+          hint="Which monthly contribution this payment settles — a later month is fine if they are paying ahead."
         >
-          <SelectTrigger id="paidForMonth" className="w-full">
-            <SelectValue placeholder="Choose a month" />
-          </SelectTrigger>
-          <SelectContent>
-            {monthOptions.map((month) => (
-              <SelectItem key={month} value={month}>
-                {formatMonthKey(month)}
-                {month > thisMonth ? " · in advance" : ""}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </Field>
-      ) : null}
+          <Select
+            value={watch("paidForMonth")}
+            onValueChange={(value) => {
+              setValue("paidForMonth", value, { shouldDirty: true });
+              const plan = planForMonthKey(plans, value);
+              if (plan) setValue("amount", plan.monthlyAmount, { shouldDirty: true });
+            }}
+          >
+            <SelectTrigger id="paidForMonth" className="w-full">
+              <SelectValue placeholder="Choose a month" />
+            </SelectTrigger>
+            <SelectContent>
+              {monthOptions.map((month) => (
+                <SelectItem key={month} value={month}>
+                  {formatMonthKey(month)}
+                  {month > thisMonth ? " · in advance" : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+      ) : (
+        <Field
+          id="paidForYear"
+          label="Covers year"
+          error={errors.paidForYear?.message}
+          hint="Which year's extra fee this payment is for."
+        >
+          <Select
+            value={selectedYear ? String(selectedYear) : undefined}
+            onValueChange={(value) => {
+              const nextYear = Number(value);
+              setValue("paidForYear", nextYear, { shouldDirty: true });
+              const plan = plans.find((p) => p.year === nextYear);
+              if (plan) setValue("amount", plan.oneTimeFee, { shouldDirty: true });
+            }}
+          >
+            <SelectTrigger id="paidForYear" className="w-full">
+              <SelectValue placeholder="Choose a year" />
+            </SelectTrigger>
+            <SelectContent>
+              {years.map((year) => (
+                <SelectItem key={year} value={String(year)}>
+                  {year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+      )}
 
       <Field
         id="amount"
@@ -157,8 +199,8 @@ export function ContributionForm({
         error={errors.amount?.message}
         hint={
           isMonthly
-            ? `Usual monthly contribution is ${settings.monthlyAmount.toLocaleString("en-IN")}.`
-            : `Full fee is ${settings.oneTimeFee.toLocaleString("en-IN")} — enter less for an instalment.`
+            ? `Usual monthly contribution is ${(monthPlan?.monthlyAmount ?? 0).toLocaleString("en-IN")}.`
+            : `Full fee for ${feePlan?.year ?? ""} is ${(feePlan?.oneTimeFee ?? 0).toLocaleString("en-IN")} — enter less for an instalment.`
         }
       >
         <Input

@@ -12,8 +12,6 @@ datasource db {
 
 enum Role {
   ADMIN
-  TREASURER
-  COMMITTEE
   MEMBER
 }
 
@@ -30,7 +28,7 @@ enum TransactionType {
 enum ContributionType {
   /// The recurring monthly savings contribution.
   MONTHLY
-  /// The one-off admission fee, payable in one go or in instalments.
+  /// The extra contribution due that year, payable in one go or in instalments.
   ONE_TIME
 }
 
@@ -38,15 +36,13 @@ model Organization {
   id   String @id @default(cuid())
   name String
 
-  /// What each member owes per month.
-  monthlyAmount Decimal @default(6000) @db.Decimal(12, 2)
-  /// One-off admission fee, owed once per member for the lifetime of their membership.
-  oneTimeFee    Decimal @default(28000) @db.Decimal(12, 2)
-
-  /// The society's operating window, as UTC-midnight firsts-of-the-month.
+  /// Overall operating window, kept in sync with the earliest and latest YearPlan.
   /// Nothing outside it can be recorded or reported on.
-  startMonth DateTime @default(dbgenerated("'2026-01-01'::date")) @db.Date
-  endMonth   DateTime @default(dbgenerated("'2027-12-01'::date")) @db.Date
+  startMonth DateTime @default(dbgenerated("'2025-04-01'::date")) @db.Date
+  endMonth   DateTime @default(dbgenerated("'2026-12-01'::date")) @db.Date
+
+  /// How many active members the society may hold. Deactivating frees a slot.
+  memberLimit Int @default(30)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -55,18 +51,48 @@ model Organization {
   users         User[]
   contributions Contribution[]
   transactions  FundTransaction[]
+  yearPlans     YearPlan[]
+}
+
+/// Rates and season for one calendar year. 2025 ran April–December; later years
+/// are typically January–December. 2025 and 2026 are historical and not edited
+/// in the app; 2027 onwards is admin-managed.
+model YearPlan {
+  id             String   @id @default(cuid())
+  organizationId String
+  year           Int
+  monthlyAmount  Decimal  @db.Decimal(12, 2)
+  /// Extra contribution due this year (instalments allowed). Not a lifetime fee.
+  oneTimeFee     Decimal  @db.Decimal(12, 2)
+  startMonth     DateTime @db.Date
+  endMonth       DateTime @db.Date
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, year])
+  @@index([organizationId])
 }
 
 model Member {
-  id             String       @id @default(cuid())
-  organizationId String
-  memberId       String // human-readable code, unique within the org
-  name           String
-  phone          String?
-  joinDate       DateTime     @default(now())
-  status         MemberStatus @default(ACTIVE)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id                String       @id @default(cuid())
+  organizationId    String
+  /// Human-readable code, unique within the org. Doubles as the member's
+  /// sign-in username.
+  memberId          String
+  name              String
+  phone             String
+  /// National ID card number. Also the member's initial sign-in password, so it
+  /// is only ever returned to an ADMIN — never to the member themselves.
+  nationalId        String
+  nomineeName       String
+  nomineeNationalId String
+  nomineePhone      String?
+  joinDate          DateTime     @default(now())
+  status            MemberStatus @default(ACTIVE)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
 
   organization  Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   contributions Contribution[]
@@ -83,10 +109,12 @@ model Contribution {
   memberId       String
   type           ContributionType @default(MONTHLY)
   amount         Decimal          @db.Decimal(12, 2)
+  /// Which year's obligation this payment counts toward.
+  paidForYear    Int
   /// First day (UTC) of the month this payment covers, e.g. 2026-08-01.
   /// Null for ONE_TIME payments, which are not tied to a month. Postgres treats
-  /// nulls as distinct in a unique index, so a member may pay the one-time fee
-  /// in several instalments while still being limited to one row per month.
+  /// nulls as distinct in a unique index, so a member may pay the year's extra
+  /// fee in several instalments while still being limited to one row per month.
   paidForMonth   DateTime?        @db.Date
   paidOnDate     DateTime         @default(now())
   note           String?
@@ -103,6 +131,7 @@ model Contribution {
   @@unique([memberId, paidForMonth])
   @@index([organizationId, type])
   @@index([organizationId, paidForMonth])
+  @@index([organizationId, paidForYear])
   @@index([organizationId, paidOnDate])
   @@index([memberId])
 }
@@ -129,21 +158,37 @@ model FundTransaction {
 }
 
 model User {
-  id             String   @id @default(cuid())
-  organizationId String
-  name           String
-  email          String   @unique
-  passwordHash   String
-  role           Role     @default(MEMBER)
+  id                String  @id @default(cuid())
+  organizationId    String
+  name              String
+  /// Staff sign in with an email. Member logins have none.
+  email             String? @unique
+  /// Everyone signs in with this: an admin's own ID, or a member's `memberId`.
+  username          String?
+  /// bcrypt of the account's NID — the second factor for both roles.
+  passwordHash      String
+  /// bcrypt of the admin's separate password, the third factor on
+  /// `/control_panel`. Null for members, who sign in with ID + NID only.
+  adminPasswordHash String?
+
+  /// The same identity details members give. Nullable because an admin fills
+  /// their own in after first sign-in, whenever they get round to it.
+  phone             String?
+  nationalId        String?
+  nomineeName       String?
+  nomineeNationalId String?
+  nomineePhone      String?
+  role              Role     @default(MEMBER)
   // Populated for MEMBER-role logins so they can see their own records.
-  memberId       String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  memberId          String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   organization          Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   member                Member?           @relation(fields: [memberId], references: [id], onDelete: SetNull)
   recordedContributions Contribution[]    @relation("ContributionRecordedBy")
   recordedTransactions  FundTransaction[] @relation("TransactionRecordedBy")
 
+  @@unique([organizationId, username])
   @@index([organizationId])
 }

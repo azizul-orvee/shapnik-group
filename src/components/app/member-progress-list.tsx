@@ -13,7 +13,7 @@ function band(row: MemberProgress) {
   if (row.completion >= 1) return { label: "Fully paid", tone: "good" as const };
   if (row.varianceToDate > 0) return { label: "Ahead", tone: "good" as const };
   if (row.onTrack) return { label: "On track", tone: "good" as const };
-  if (row.varianceToDate >= -row.monthlyTarget / 12) return { label: "Slightly behind", tone: "warning" as const };
+  if (row.varianceToDate >= -row.monthlyAmount) return { label: "Slightly behind", tone: "warning" as const };
   return { label: "Behind", tone: "critical" as const };
 }
 
@@ -55,7 +55,9 @@ export function MemberProgressList({
                 <div className="text-muted-foreground flex items-center gap-2 text-xs">
                   <span className="font-mono">{row.memberCode}</span>
                   <span aria-hidden>·</span>
-                  <span>{row.monthsPaid}/12 months</span>
+                  <span>
+                    {row.monthsPaid}/{row.monthCount} months
+                  </span>
                   {showPhone && row.phone ? (
                     <a href={`tel:${row.phone}`} className="flex items-center gap-1 hover:underline">
                       <Phone className="size-3" />

@@ -21,7 +21,11 @@ export default async function EditMemberPage({ params }: PageProps<"/members/[id
         defaultValues={{
           name: member.name,
           memberId: member.memberId,
-          phone: member.phone ?? undefined,
+          phone: member.phone,
+          nationalId: member.nationalId,
+          nomineeName: member.nomineeName,
+          nomineeNationalId: member.nomineeNationalId,
+          nomineePhone: member.nomineePhone ?? "",
           joinDate: member.joinDate.toISOString().slice(0, 10),
           status: member.status,
         }}

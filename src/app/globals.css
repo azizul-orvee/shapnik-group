@@ -17,11 +17,20 @@
   --color-viz-grid: var(--viz-grid);
   --color-viz-surface: var(--viz-surface);
 
+  /* Brand — teal chrome (nav, buttons, focus). Deliberately clear of the
+     status hues: green ≈ paid, so brand sits at a bluer teal. Charts never use
+     it; they stay on the CVD-validated viz-* palette. */
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-muted: var(--brand-muted);
+  --color-brand-ring: var(--brand-ring);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-heading);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -58,90 +67,121 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  --shadow-xs: var(--elev-xs);
+  --shadow-sm: var(--elev-sm);
+  --shadow-md: var(--elev-md);
+  --shadow-lg: var(--elev-lg);
+  --shadow-xl: var(--elev-xl);
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  /* Warm paper neutrals — a whisper of chroma so surfaces read as designed,
+     not dead grey. Cards sit brighter than the page and lift on a soft shadow. */
+  --background: oklch(0.988 0.003 95);
+  --foreground: oklch(0.19 0.012 240);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.19 0.012 240);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.19 0.012 240);
+
+  /* Brand teal as the primary chrome colour. */
+  --primary: oklch(0.5 0.078 194);
+  --primary-foreground: oklch(0.99 0.012 190);
+  --secondary: oklch(0.965 0.004 200);
+  --secondary-foreground: oklch(0.28 0.02 210);
+  --muted: oklch(0.965 0.004 200);
+  --muted-foreground: oklch(0.52 0.015 220);
+  --accent: oklch(0.955 0.014 195);
+  --accent-foreground: oklch(0.36 0.05 200);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --border: oklch(0.912 0.005 210);
+  --input: oklch(0.9 0.006 210);
+  --ring: oklch(0.5 0.078 194);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-  /* Data-visualisation palette.
-     Categorical slots 1 (blue) and 2 (orange) from the validated reference
-     palette — monthly savings vs the one-time fee. Status colours are fixed
-     and never themed; they always ship with a label, never colour alone. */
-  --viz-monthly: #2a78d6;
-  --viz-monthly-soft: #cde2fb;
-  --viz-onetime: #eb6834;
-  --viz-onetime-soft: #fbdccf;
-  --viz-good: #0ca30c;
-  --viz-warning: #fab219;
-  --viz-serious: #ec835a;
-  --viz-critical: #d03b3b;
-  --viz-track: oklch(0.94 0 0);
-  --viz-grid: oklch(0.92 0 0);
-  --viz-surface: var(--card);
+  --radius: 0.7rem;
+
+  --sidebar: oklch(0.988 0.003 95);
+  --sidebar-foreground: oklch(0.19 0.012 240);
+  --sidebar-primary: oklch(0.5 0.078 194);
+  --sidebar-primary-foreground: oklch(0.99 0.012 190);
+  --sidebar-accent: oklch(0.955 0.014 195);
+  --sidebar-accent-foreground: oklch(0.36 0.05 200);
+  --sidebar-border: oklch(0.912 0.005 210);
+  --sidebar-ring: oklch(0.5 0.078 194);
+
+  --brand: oklch(0.5 0.078 194);
+  --brand-foreground: oklch(0.99 0.012 190);
+  --brand-soft: oklch(0.955 0.02 195);
+  --brand-muted: oklch(0.9 0.035 195);
+  --brand-ring: oklch(0.62 0.07 194);
+  --brand-gradient-from: oklch(0.56 0.09 196);
+  --brand-gradient-to: oklch(0.44 0.08 205);
+
+  /* Layered, low-opacity, faintly cool shadows — soft not heavy. */
+  --elev-xs: 0 1px 2px 0 oklch(0.2 0.02 230 / 0.05);
+  --elev-sm: 0 1px 2px -1px oklch(0.2 0.02 230 / 0.08), 0 2px 6px -1px oklch(0.2 0.02 230 / 0.06);
+  --elev-md: 0 2px 4px -2px oklch(0.2 0.02 230 / 0.1), 0 6px 16px -3px oklch(0.2 0.02 230 / 0.08);
+  --elev-lg: 0 4px 8px -3px oklch(0.2 0.02 230 / 0.1), 0 14px 32px -6px oklch(0.2 0.02 230 / 0.12);
+  --elev-xl: 0 8px 16px -6px oklch(0.2 0.02 230 / 0.12), 0 24px 48px -12px oklch(0.2 0.02 230 / 0.18);
+
+  --font-heading: var(--font-display), var(--font-sans);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  /* Deep cool charcoal — premium, faintly blue, never flat black. */
+  --background: oklch(0.17 0.008 240);
+  --foreground: oklch(0.97 0.003 230);
+  --card: oklch(0.212 0.009 240);
+  --card-foreground: oklch(0.97 0.003 230);
+  --popover: oklch(0.212 0.009 240);
+  --popover-foreground: oklch(0.97 0.003 230);
+
+  --primary: oklch(0.72 0.1 190);
+  --primary-foreground: oklch(0.2 0.03 210);
+  --secondary: oklch(0.26 0.01 235);
+  --secondary-foreground: oklch(0.96 0.004 230);
+  --muted: oklch(0.26 0.01 235);
+  --muted-foreground: oklch(0.72 0.012 220);
+  --accent: oklch(0.3 0.022 205);
+  --accent-foreground: oklch(0.9 0.03 195);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 13%);
+  --ring: oklch(0.62 0.08 192);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+
+  --sidebar: oklch(0.19 0.009 240);
+  --sidebar-foreground: oklch(0.97 0.003 230);
+  --sidebar-primary: oklch(0.72 0.1 190);
+  --sidebar-primary-foreground: oklch(0.2 0.03 210);
+  --sidebar-accent: oklch(0.3 0.022 205);
+  --sidebar-accent-foreground: oklch(0.9 0.03 195);
+  --sidebar-border: oklch(1 0 0 / 9%);
+  --sidebar-ring: oklch(0.62 0.08 192);
+
+  --brand: oklch(0.72 0.1 190);
+  --brand-foreground: oklch(0.2 0.03 210);
+  --brand-soft: oklch(0.3 0.03 200);
+  --brand-muted: oklch(0.4 0.05 197);
+  --brand-ring: oklch(0.6 0.09 192);
+  --brand-gradient-from: oklch(0.62 0.1 192);
+  --brand-gradient-to: oklch(0.48 0.09 205);
+
+  --elev-xs: 0 1px 2px 0 oklch(0 0 0 / 0.3);
+  --elev-sm: 0 1px 2px -1px oklch(0 0 0 / 0.4), 0 2px 6px -1px oklch(0 0 0 / 0.3);
+  --elev-md: 0 2px 4px -2px oklch(0 0 0 / 0.4), 0 6px 16px -3px oklch(0 0 0 / 0.35);
+  --elev-lg: 0 4px 8px -3px oklch(0 0 0 / 0.45), 0 14px 32px -6px oklch(0 0 0 / 0.4);
+  --elev-xl: 0 8px 16px -6px oklch(0 0 0 / 0.5), 0 24px 48px -12px oklch(0 0 0 / 0.55);
+
   /* Same two hues, stepped for the dark surface — not an automatic flip. */
   --viz-monthly: #3987e5;
   --viz-monthly-soft: #184f95;
@@ -151,8 +191,26 @@
   --viz-warning: #fab219;
   --viz-serious: #ec835a;
   --viz-critical: #d03b3b;
-  --viz-track: oklch(0.28 0 0);
-  --viz-grid: oklch(0.30 0 0);
+  --viz-track: oklch(0.3 0.008 240);
+  --viz-grid: oklch(0.32 0.008 240);
+  --viz-surface: var(--card);
+}
+
+:root {
+  /* Data-visualisation palette (light). Categorical slots 1 (blue) and 2
+     (orange) from the validated reference palette — monthly savings vs the
+     one-time fee. Status colours are fixed and never themed; they always ship
+     with a label, never colour alone. */
+  --viz-monthly: #2a78d6;
+  --viz-monthly-soft: #cde2fb;
+  --viz-onetime: #eb6834;
+  --viz-onetime-soft: #fbdccf;
+  --viz-good: #0ca30c;
+  --viz-warning: #fab219;
+  --viz-serious: #ec835a;
+  --viz-critical: #d03b3b;
+  --viz-track: oklch(0.93 0.004 200);
+  --viz-grid: oklch(0.92 0.004 200);
   --viz-surface: var(--card);
 }
 
@@ -162,8 +220,107 @@
   }
   body {
     @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "cv11", "ss01";
   }
   html {
     @apply font-sans;
+    -webkit-text-size-adjust: 100%;
+  }
+  /* No blue flash when tapping on mobile; the app supplies its own states. */
+  a,
+  button,
+  [role="button"],
+  label {
+    -webkit-tap-highlight-color: transparent;
+  }
+  ::selection {
+    background: var(--brand-muted);
+    color: var(--foreground);
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-heading;
+    letter-spacing: -0.011em;
+  }
+
+  /* Slim, unobtrusive scrollbars that match the theme. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: color-mix(in oklch, var(--muted-foreground) 30%, transparent);
+    border-radius: 9999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in oklch, var(--muted-foreground) 45%, transparent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* Cards lift off the warm page on a soft shadow. Centralised here so the
+     shadcn primitives stay untouched. */
+  [data-slot="card"] {
+    box-shadow: var(--elev-sm);
+    transition:
+      box-shadow 0.25s ease,
+      transform 0.25s ease,
+      border-color 0.25s ease;
+  }
+
+  /* Buttons and controls ease their colour and lift. */
+  [data-slot="button"] {
+    transition:
+      background-color 0.18s ease,
+      color 0.18s ease,
+      box-shadow 0.18s ease,
+      transform 0.06s ease;
+  }
+  [data-slot="button"][data-variant="default"] {
+    box-shadow: var(--elev-xs);
+  }
+}
+
+@utility bg-brand-gradient {
+  background-image: linear-gradient(
+    135deg,
+    var(--brand-gradient-from),
+    var(--brand-gradient-to)
+  );
+}
+
+/* A subtle brand-tinted wash for hero surfaces. */
+@utility bg-brand-wash {
+  background-image: radial-gradient(
+      120% 120% at 100% 0%,
+      color-mix(in oklch, var(--brand) 10%, transparent),
+      transparent 55%
+    ),
+    linear-gradient(var(--card), var(--card));
+}
+
+@utility card-lift {
+  &:hover {
+    box-shadow: var(--elev-lg);
+    transform: translateY(-2px);
   }
 }

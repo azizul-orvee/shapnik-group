@@ -14,7 +14,7 @@ const initialState: LoginState = { error: null };
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" className="w-full" size="lg" disabled={pending}>
+    <Button type="submit" className="mt-1 h-11 w-full text-[0.95rem]" disabled={pending}>
       {pending ? "Signing in…" : "Sign in"}
     </Button>
   );
@@ -32,27 +32,32 @@ export function LoginForm() {
         </Alert>
       ) : null}
 
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+      <div className="space-y-1.5">
+        <Label htmlFor="identifier">Member ID</Label>
         <Input
-          id="email"
-          name="email"
-          type="email"
+          id="identifier"
+          name="identifier"
+          type="text"
           autoComplete="username"
-          inputMode="email"
+          autoCapitalize="characters"
           required
-          placeholder="you@example.com"
+          placeholder="M-001"
+          className="h-11"
         />
+        <p className="text-muted-foreground text-xs">
+          The member ID on your passbook, e.g. M-014.
+        </p>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
+      <div className="space-y-1.5">
+        <Label htmlFor="password">NID number</Label>
         <Input
           id="password"
           name="password"
           type="password"
           autoComplete="current-password"
           required
+          className="h-11"
         />
       </div>
 

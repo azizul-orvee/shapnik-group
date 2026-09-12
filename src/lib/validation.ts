@@ -17,6 +17,38 @@ const isoDate = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Use a YYYY-MM-DD date");
 
+/**
+ * Bangladeshi NIDs are usually 10, 13 or 17 digits, but older and reissued
+ * cards vary, so accept any 10–17 digit number rather than reject a real one.
+ */
+const NID_PATTERN = /^\d{10,17}$/;
+const NID_MESSAGE = "NID must be 10–17 digits";
+
+const nationalId = z.string().trim().regex(NID_PATTERN, NID_MESSAGE);
+
+const phoneNumber = z
+  .string()
+  .trim()
+  .regex(/^01\d{9}$/, "Enter an 11-digit number starting 01");
+
+const optionalNationalId = z
+  .string()
+  .trim()
+  .optional()
+  .or(z.literal(""))
+  .transform((v) => (v ? v : undefined))
+  .refine((v) => v === undefined || NID_PATTERN.test(v), { message: NID_MESSAGE });
+
+const optionalPhone = z
+  .string()
+  .trim()
+  .optional()
+  .or(z.literal(""))
+  .transform((v) => (v ? v : undefined))
+  .refine((v) => v === undefined || /^01\d{9}$/.test(v), {
+    message: "Enter an 11-digit number starting 01",
+  });
+
 export const memberCreateSchema = z.object({
   name: z.string().trim().min(2, "Name is required").max(120),
   memberId: z
@@ -25,13 +57,19 @@ export const memberCreateSchema = z.object({
     .min(1, "Member ID is required")
     .max(24)
     .regex(/^[A-Za-z0-9-]+$/, "Letters, numbers and hyphens only"),
-  phone: z
+  phone: phoneNumber,
+  nationalId,
+  nomineeName: z.string().trim().min(2, "Nominee name is required").max(120),
+  nomineeNationalId: nationalId,
+  nomineePhone: z
     .string()
     .trim()
-    .max(24)
     .optional()
     .or(z.literal(""))
-    .transform((v) => (v ? v : undefined)),
+    .transform((v) => (v ? v : undefined))
+    .refine((v) => v === undefined || /^01\d{9}$/.test(v), {
+      message: "Enter an 11-digit number starting 01",
+    }),
   joinDate: isoDate,
   status: z.enum(["ACTIVE", "INACTIVE"]).default("ACTIVE"),
 });
@@ -48,7 +86,7 @@ const note = z
 
 /**
  * A MONTHLY payment settles one named month; a ONE_TIME payment is an
- * instalment against the admission fee and has no month attached.
+ * instalment against that year's extra fee and has no month attached.
  */
 export const contributionCreateSchema = z
   .object({
@@ -56,6 +94,7 @@ export const contributionCreateSchema = z
     type: z.enum(["MONTHLY", "ONE_TIME"]).default("MONTHLY"),
     amount,
     paidForMonth: monthKey.optional().or(z.literal("")),
+    paidForYear: z.coerce.number().int().min(2000).max(2100).optional(),
     paidOnDate: isoDate,
     note,
   })
@@ -63,14 +102,20 @@ export const contributionCreateSchema = z
     message: "Choose the month this payment covers",
     path: ["paidForMonth"],
   })
+  .refine((v) => v.type !== "ONE_TIME" || Boolean(v.paidForYear), {
+    message: "Choose the year this fee covers",
+    path: ["paidForYear"],
+  })
   .transform((v) => ({
     ...v,
     paidForMonth: v.type === "MONTHLY" ? (v.paidForMonth as string) : undefined,
+    paidForYear: v.type === "ONE_TIME" ? v.paidForYear : undefined,
   }));
 
 export const contributionUpdateSchema = z.object({
   amount: amount.optional(),
   paidForMonth: monthKey.optional(),
+  paidForYear: z.coerce.number().int().min(2000).max(2100).optional(),
   paidOnDate: isoDate.optional(),
   note,
 });
@@ -83,6 +128,20 @@ export const bulkContributionSchema = z.object({
   paidOnDate: isoDate,
 });
 
+/**
+ * One large payment that settles several obligations at once. The server splits
+ * it with `planLumpSum()`; the client previews the same split before submitting.
+ */
+export const lumpSumSchema = z.object({
+  memberId: z.string().min(1, "Choose a member"),
+  amount,
+  paidForYear: z.coerce.number().int().min(2000).max(2100),
+  paidOnDate: isoDate,
+  /** Record a remainder too small for a whole month as a short payment. */
+  allowPartialMonth: z.coerce.boolean().default(true),
+  note,
+});
+
 export const transactionCreateSchema = z.object({
   type: z.enum(["IN", "OUT"]),
   amount,
@@ -92,18 +151,80 @@ export const transactionCreateSchema = z.object({
 
 export const transactionUpdateSchema = transactionCreateSchema.partial();
 
+/** Members sign in at /login with their member ID and their NID. */
 export const loginSchema = z.object({
-  email: z.string().trim().toLowerCase().email("Enter a valid email"),
-  password: z.string().min(1, "Enter your password"),
+  identifier: z.string().trim().min(1, "Enter your member ID"),
+  password: z.string().min(1, "Enter your NID number"),
 });
 
-export const userCreateSchema = z.object({
-  name: z.string().trim().min(2, "Name is required").max(120),
-  email: z.string().trim().toLowerCase().email("Enter a valid email"),
-  password: z.string().min(8, "Use at least 8 characters").max(200),
-  role: z.enum(["ADMIN", "TREASURER", "COMMITTEE", "MEMBER"]),
-  memberId: z.string().optional().or(z.literal("")).transform((v) => (v ? v : undefined)),
+/**
+ * Admins sign in at /control_panel with a third factor on top of the same two:
+ * a separate password only they hold.
+ */
+export const adminLoginSchema = loginSchema.extend({
+  adminPassword: z.string().min(1, "Enter your password"),
 });
+
+/**
+ * An admin editing their own details. Everything is optional so they can fill it
+ * in over time, but a value that is supplied has to be valid.
+ */
+export const profileUpdateSchema = z.object({
+  name: z.string().trim().min(2, "Name is required").max(120),
+  phone: optionalPhone,
+  nationalId: optionalNationalId,
+  nomineeName: z
+    .string()
+    .trim()
+    .max(120)
+    .optional()
+    .or(z.literal(""))
+    .transform((v) => (v ? v : undefined)),
+  nomineeNationalId: optionalNationalId,
+  nomineePhone: optionalPhone,
+});
+
+export const yearPlanSchema = z
+  .object({
+    year: z.coerce.number().int().min(2027, "Only 2027 onwards can be added").max(2100),
+    monthlyAmount: amount,
+    oneTimeFee: z.coerce
+      .number({ message: "Enter an amount" })
+      .min(0, "Amount cannot be negative")
+      .max(99_999_999, "Amount is too large")
+      .refine((n) => Math.round(n * 100) === Number((n * 100).toFixed(0)), {
+        message: "Use at most two decimal places",
+      }),
+    startMonth: monthKey,
+    endMonth: monthKey,
+  })
+  .refine((v) => v.startMonth <= v.endMonth, {
+    message: "The first month must be on or before the last month",
+    path: ["endMonth"],
+  })
+  .refine((v) => v.startMonth.startsWith(String(v.year)) && v.endMonth.startsWith(String(v.year)), {
+    message: "Start and end months must fall in the same year",
+    path: ["startMonth"],
+  });
+
+export const yearPlanUpdateSchema = z
+  .object({
+    monthlyAmount: amount.optional(),
+    oneTimeFee: z.coerce
+      .number({ message: "Enter an amount" })
+      .min(0, "Amount cannot be negative")
+      .max(99_999_999, "Amount is too large")
+      .refine((n) => Math.round(n * 100) === Number((n * 100).toFixed(0)), {
+        message: "Use at most two decimal places",
+      })
+      .optional(),
+    startMonth: monthKey.optional(),
+    endMonth: monthKey.optional(),
+  })
+  .refine((v) => !v.startMonth || !v.endMonth || v.startMonth <= v.endMonth, {
+    message: "The first month must be on or before the last month",
+    path: ["endMonth"],
+  });
 
 // `*Input` is what a form holds before parsing (defaults/transforms not yet
 // applied); `*Values` is what the server receives after parsing.
@@ -114,8 +235,14 @@ export type ContributionCreateInput = z.output<typeof contributionCreateSchema>;
 export type ContributionUpdateInput = z.output<typeof contributionUpdateSchema>;
 export type BulkContributionFormInput = z.input<typeof bulkContributionSchema>;
 export type BulkContributionInput = z.output<typeof bulkContributionSchema>;
+export type LumpSumFormInput = z.input<typeof lumpSumSchema>;
+export type LumpSumInput = z.output<typeof lumpSumSchema>;
 export type TransactionFormInput = z.input<typeof transactionCreateSchema>;
 export type TransactionCreateInput = z.output<typeof transactionCreateSchema>;
 export type LoginInput = z.output<typeof loginSchema>;
-export type UserFormInput = z.input<typeof userCreateSchema>;
-export type UserCreateInput = z.output<typeof userCreateSchema>;
+export type AdminLoginInput = z.output<typeof adminLoginSchema>;
+export type ProfileFormInput = z.input<typeof profileUpdateSchema>;
+export type ProfileUpdateInput = z.output<typeof profileUpdateSchema>;
+export type YearPlanFormInput = z.input<typeof yearPlanSchema>;
+export type YearPlanInput = z.output<typeof yearPlanSchema>;
+export type YearPlanUpdateInput = z.output<typeof yearPlanUpdateSchema>;

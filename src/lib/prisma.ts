@@ -1,5 +1,6 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@/generated/prisma/client";
+import { schemaFromDatabaseUrl } from "@/lib/db-url";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -10,6 +11,9 @@ function createClient() {
   if (!connectionString) {
     throw new Error("DATABASE_URL is not set. Copy .env.example to .env and fill it in.");
   }
+
+  // Keep the runtime on the same Postgres schema `prisma migrate` targets.
+  const schema = schemaFromDatabaseUrl(connectionString);
 
   const adapter = new PrismaPg({
     connectionString,
@@ -22,7 +26,7 @@ function createClient() {
     // Serverless keeps many short-lived instances around; capping the lifetime
     // stops any one of them holding a connection open indefinitely.
     maxLifetimeSeconds: 300,
-  });
+  }, schema ? { schema } : undefined);
 
   return new PrismaClient({ adapter });
 }

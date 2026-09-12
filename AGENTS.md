@@ -8,7 +8,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-# Shomiti — project conventions
+# Shapnik — project conventions
 
 **New here? Read `HANDOFF.md` first** — it covers the architecture, the domain
 maths, decisions already made, and the bugs that have already bitten this
@@ -20,36 +20,113 @@ See `README.md` for setup.
 
 ## What every member owes
 
-Rates live on `Organization` (`monthlyAmount`, `oneTimeFee`) so a second society
-can run different ones. Read them through `getRates()` in `src/server/progress.ts`
-— never hard-code 6000/28000 in a component.
+Rates live on `YearPlan` (one row per calendar year: `monthlyAmount`, `oneTimeFee`,
+`startMonth`, `endMonth`). Read them through `getYearPlan()` / `listYearPlans()`
+in `src/server/years.ts` — never hard-code 5000/6000/25000/28000 in a component.
+`getSocietySettings()` only describes the overall window.
 
-- a monthly contribution, twelve times a year (default 6,000 → 72,000)
-- a one-off admission fee, owed once for the life of the membership (28,000)
-- so one member owes **100,000 across a full year**
+- a monthly contribution for each month that year runs
+- an extra fee due **that year** (instalments allowed)
+- 2025 ran April–December: 5,000 × 9 + 25,000 = **70,000**
+- 2026 is a full year: 6,000 × 12 + 28,000 = **100,000**
+- 2027 onwards is added by an admin under `/years`. **Do not pre-create 2027.**
+  2025 and 2026 cannot have their rates edited; do not label them "Locked" in
+  the UI — just omit Edit.
 
 `Contribution.type` is `MONTHLY` or `ONE_TIME`. `paidForMonth` is null for
-`ONE_TIME`, and because Postgres treats nulls as distinct in a unique index the
-fee can be taken in instalments while monthly payments stay one-per-month.
+`ONE_TIME`. `paidForYear` says which year's obligation the payment counts toward.
+Postgres treats nulls as distinct in a unique index, so the year's extra fee can
+be taken in instalments while monthly payments stay one-per-month.
 
-The fee is owed **once**, so only the part still outstanding when a year opened
-counts toward that year's target: 2026 asks for 100,000, and a member who
-cleared the fee then owes 72,000 in 2027.
+**Lump sums.** Members who do not pay monthly hand over one large amount. Split it
+with `planLumpSum()` from `src/lib/allocate.ts` — fee first, then short months
+topped up, then unpaid months oldest first. Never write that ordering by hand
+anywhere else: the client previews the split and the server recomputes it from the
+same function, and they must agree.
+
+**A month holds exactly one row** (`@@unique([memberId, paidForMonth])`). Adding
+money to an already-short month is an `update`, not a second insert — and its
+`FundTransaction` moves with it in the same `$transaction`.
+
+**"Part paid" is a real state, not "paid".** A month settled for less than the
+rate is recorded but still owed. Keep it visible: `DuesRow.short` / `shortfall`,
+`MemberProgress.partialMonths`, `PaidBadge`'s "Part paid", `MonthGrid`'s amber
+chip, and `getYearObligation().outstanding`, which counts the gap. An
+"outstanding" figure must never read zero while a month is short.
 
 ## The operating window
 
-`Organization.startMonth` / `endMonth` bound everything (currently 2026-01 to
-2027-12). Read them via `getSocietySettings()`, and resolve user input with
-`resolveMonth()` / `resolveYear()` — both clamp into the window, so an
-out-of-range `?month=` renders the nearest valid month instead of erroring.
+`Organization.startMonth` / `endMonth` bound everything and are kept in sync with
+the earliest and latest `YearPlan` (currently 2025-04 to 2026-12, until an admin
+adds later years). Read the window
+via `getSocietySettings()`, and resolve user input with `resolveMonth()` /
+`resolveYear()` — both clamp into the window, so an out-of-range `?month=`
+renders the nearest valid month instead of erroring.
 
 - **Never use `new Date()` for "which month/year are we on"** in a page. Use
   `settings.activeMonthKey`, which is today clamped into the window.
+- The header calendar date is the exception: `formatDhakaToday()` /
+  `dhakaDateKey()` in `src/lib/dates.ts`, always `Asia/Dhaka`, so every user
+  sees the same Bangladesh date.
 - **Months ahead of today are legitimate.** Members pay in advance, sometimes a
   whole year at once, so pickers and forms offer future months inside the
   window. An unpaid future month is "not due yet", never "pending".
 - `createContribution` and the bulk path reject months outside the window — the
   form hiding them is UX, the server check is the rule.
+
+## Roles, logins and the cap
+
+**Two roles only: `ADMIN` and `MEMBER`.** Committee and treasurer were removed —
+do not reintroduce them.
+
+**Two sign-in doors, and they do not overlap.**
+
+| Door | Provider id | Factors | Who |
+| --- | --- | --- | --- |
+| `/login` | `member-login` | member ID + NID | members only |
+| `/control_panel` | `admin-login` | ID + NID + password | admins only |
+
+- `member-login` **refuses any ADMIN** even with correct credentials; the admin
+  must use `/control_panel`. `admin-login` refuses anyone who is not an ADMIN
+  with `adminPasswordHash` set.
+- `User.username` is the ID (admin from `ADMIN_LOGIN_ID`, member from
+  `memberId`), unique per organisation.
+- `User.passwordHash` is bcrypt of the NID — the shared second factor.
+- `User.adminPasswordHash` is bcrypt of the admin's separate password, the third
+  factor. Null for members.
+- All three admin credentials come from env (`ADMIN_LOGIN_ID`, `ADMIN_NID`,
+  `ADMIN_PASSWORD`) and are applied by the seed, which also deletes any ADMIN row
+  whose username no longer matches so a rotated credential cannot linger.
+- Both `authorize()` paths compare against a dummy hash on every failure so a
+  wrong ID costs the same as a wrong secret. Keep it that way, and keep the error
+  message vague — never reveal which factor failed.
+- There is no email login. `User.email` still exists but nothing authenticates
+  with it.
+
+  `1`) or a member's `memberId`. Unique per organisation.
+- `User.passwordHash` is bcrypt of their NID. The admin's comes from `ADMIN_NID`.
+- `User.email` still exists but nothing signs in with it.
+
+An admin registers a member with **name, member ID, phone, NID, nominee name and
+nominee NID**; nominee phone is the only optional field. `createMember()` also
+creates their login in the same transaction.
+
+**The NID is a credential, so it must stay in step with the password.**
+`updateMember()` and `updateProfile()` both re-hash the password when the NID
+changes, and `updateMember()` also moves `username` when the member ID changes.
+Any new path that writes an NID must do the same or the stated credentials stop
+working.
+
+**A member's NID is never shown to anyone who cannot already act for them.**
+`redactMember()` masks `nationalId` and `nomineeNationalId` for non-admins; the
+member API routes and the member detail page both apply it.
+
+`Organization.memberLimit` (default **30**) caps **active** members; deactivating
+frees a slot. `createMember()` enforces it.
+
+Anyone may edit **their own** account at `/profile` (`PATCH /api/profile`) — never
+anyone else's. `/users` is a read-only roster: member logins come from member
+creation, and the admin is seeded.
 
 ## Boundaries
 
@@ -57,8 +134,9 @@ out-of-range `?month=` renders the nearest valid month instead of erroring.
   `server-only`. Route handlers and pages call these; they never touch `prisma`
   directly.
 - `src/lib/api.ts` — the authorization boundary. `requireApiWriter()`,
-  `requireApiOrgReader()` and `requireApiSession()` throw `ApiError`, which
-  `handler()` turns into JSON. Every mutation route goes through one of them.
+  `requireApiOrgReader()`, `requireApiSession()` and `requireApiAdmin()` throw
+  `ApiError`, which `handler()` turns into JSON. Every mutation route goes
+  through one of them.
 - `src/lib/session.ts` — the same checks for pages, expressed as redirects.
   These are UX, not security; the API guards are what actually enforce access.
 - `src/lib/validation.ts` — every Zod schema. Forms and routes share them, so a
@@ -80,10 +158,17 @@ out-of-range `?month=` renders the nearest valid month instead of erroring.
   on the same page can never disagree.
 - **`paidForMonth` is a UTC-midnight `date`** on the first of the month. Build it
   with `monthKeyToDate()` from `src/lib/dates.ts`; never construct it inline.
+- **`paidForYear` is required** on every contribution. For `MONTHLY` it is the
+  year of `paidForMonth`; for `ONE_TIME` the treasurer picks the year. Progress
+  counts the extra fee by `paidForYear`, not by `paidOnDate`.
 - **Money is `Decimal`.** Call `.toNumber()` only at the edge, when formatting.
   Use `formatTaka` / `formatTakaShort` from `src/lib/money.ts`.
 - **Members are deactivated, not deleted.** `DELETE /api/members/[id]` sets
   status to `INACTIVE`.
+- **Member-facing views show aggregates only.** `/my-statement` may show the
+  member's own figures and society-wide **totals**, but never another member's
+  name, balance or standing. Guard this when adding data to any member page —
+  `MEMBER` has no org-wide read access (403), so pass only aggregates.
 - **Nothing with a function in it crosses the RSC boundary.** Nav icons are
   string keys resolved on the client (`src/components/app/nav-links.ts`).
 
@@ -96,9 +181,11 @@ wherever a schema has defaults or transforms. Submit through `apiRequest()` from
 
 ## Charts
 
-Colours come from the `--viz-*` tokens in `globals.css`, a validated
+Chart colours come from the `--viz-*` tokens in `globals.css`, a validated
 colourblind-safe pair (blue = monthly savings, orange = one-time fee) plus fixed
-status colours. Do not introduce new chart hues without re-validating.
+status colours. These are **separate from the brand teal** (see Design system) —
+never chart on the brand token, and do not introduce new chart hues without
+re-validating.
 
 - **Identity never rests on colour alone** — every meter and chart ships a legend
   or a written label beside the swatch.
@@ -108,11 +195,63 @@ status colours. Do not introduce new chart hues without re-validating.
   documents the element form as unsupported for typing and it silently renders
   nothing.
 
+## Design system
+
+The chrome — buttons, active nav, focus rings, headings, hero washes — runs on a
+**brand teal**, defined once in `globals.css` as `--brand` / `--primary` and its
+`--brand-soft` / `--brand-muted` / gradient tints. Teal sits deliberately clear
+of the status hues (green ≈ paid), and **charts never use it** — they stay on the
+CVD-validated `--viz-*` palette. Use the `brand`/`primary` tokens for chrome and
+`viz-*` for data, and don't cross the two.
+
+- **Neutrals carry a whisper of warmth**, cards lift on the `--elev-*` shadow
+  tokens (applied centrally via `[data-slot="card"]` so the shadcn primitives
+  stay untouched), and motion eases in via the same layer. Respect
+  `prefers-reduced-motion` — it is already handled globally.
+- **Two typefaces:** Inter for body, **Plus Jakarta Sans** for headings and big
+  money figures. `h1`–`h3` get `font-heading` automatically; reach for it
+  explicitly (`font-heading`) on hero numbers.
+- **`BrandMark`** (`src/components/app/brand-mark.tsx`) renders the society logo
+  (`public/logo.svg`) on a small white badge, so the multicolour artwork stays
+  legible in both themes. Header and login use it. The browser favicon is the
+  same logo via `src/app/icon.svg`, with `src/app/apple-icon.png` for iOS.
+
+## Theming (light / dark)
+
+Dark mode is **class-based** (`.dark` on `<html>`), not `prefers-color-scheme`.
+The class is set **before first paint** by the inline `beforeInteractive` script
+in `src/app/layout.tsx`, which reads `localStorage.theme` (`light` | `dark` |
+`system`) and falls back to the OS preference — so there is no flash. The header
+`ThemeToggle` flips it and persists the choice. **Every colour token must be
+defined in both `:root` and `.dark`;** a token that only exists in one borrows
+the wrong value in the other theme.
+
 ## UI
 
-Mobile first — the treasurer logs payments on a phone. Bottom nav below `md`,
-sidebar above. Keep tables scrollable in an `overflow-x-auto` wrapper and hide
-secondary columns on small screens rather than shrinking them.
+Mobile first — the treasurer logs payments on a phone. A floating rounded bottom
+nav below `md` (thumb-reachable, safe-area aware), sidebar above. Keep tables
+scrollable in an `overflow-x-auto` wrapper and hide secondary columns on small
+screens rather than shrinking them.
+
+The signed-in header shows today's date in Dhaka time (`formatDhakaToday()`) — on
+the narrowest phones the weekday is dropped, never the whole pill. Do not import
+`src/server/years.ts` from a client component — use `planForMonthKey` from
+`src/lib/dates.ts`.
+
+## Two database entry points
+
+- **`npm run db:seed`** — development only. Creates 30 fictional members and
+  ~600 payments. **Never run it against production.**
+- **`npm run db:bootstrap`** — the production first run. Organisation, year plans
+  and the admin login from env, and nothing else. Idempotent; never touches
+  members or payments.
+
+Keep them in step: anything a live society genuinely cannot start without belongs
+in `bootstrap.ts`, not just in `seed.ts`.
+
+`?schema=` in `DATABASE_URL` is honoured at runtime as well as by the CLI — see
+`src/lib/db-url.ts`. The pg driver ignores it on its own, so any new PrismaClient
+must pass the schema through the same helper.
 
 ## Before finishing
 

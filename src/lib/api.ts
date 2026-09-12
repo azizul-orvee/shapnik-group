@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { ZodError, type ZodType } from "zod";
 import { getAppSession, type AppSession } from "@/lib/session";
-import { canReadOrg, canWrite } from "@/lib/rbac";
+import { canReadOrg, canWrite, canManageYears } from "@/lib/rbac";
 
 export class ApiError extends Error {
   constructor(
@@ -67,16 +67,23 @@ async function sessionOrThrow(): Promise<AppSession> {
 /** Any signed-in user. */
 export const requireApiSession = sessionOrThrow;
 
-/** ADMIN, TREASURER or COMMITTEE. */
+/** Any role with org-wide read access — currently ADMIN only. */
 export async function requireApiOrgReader(): Promise<AppSession> {
   const session = await sessionOrThrow();
   if (!canReadOrg(session.role)) throw new ApiError(403, "You do not have access to this");
   return session;
 }
 
-/** ADMIN or TREASURER. */
+/** Roles allowed to write — currently ADMIN only. */
 export async function requireApiWriter(): Promise<AppSession> {
   const session = await sessionOrThrow();
   if (!canWrite(session.role)) throw new ApiError(403, "Only admins and the treasurer can do this");
+  return session;
+}
+
+/** ADMIN only. */
+export async function requireApiAdmin(): Promise<AppSession> {
+  const session = await sessionOrThrow();
+  if (!canManageYears(session.role)) throw new ApiError(403, "Only an admin can do this");
   return session;
 }

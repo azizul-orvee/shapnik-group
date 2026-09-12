@@ -111,6 +111,7 @@ export default async function ContributionsPage({ searchParams }: PageProps<"/co
                     <CoversLabel
                       type={contribution.type}
                       paidForMonth={contribution.paidForMonth}
+                      paidForYear={contribution.paidForYear}
                     />
                   </TableCell>
                   <TableCell className="hidden md:table-cell">

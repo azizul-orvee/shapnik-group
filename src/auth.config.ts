@@ -15,6 +15,7 @@ export const authConfig = {
   callbacks: {
     jwt({ token, user, trigger, session }) {
       if (user) {
+        token.username = user.username ?? null;
         token.role = user.role;
         token.organizationId = user.organizationId;
         token.memberId = user.memberId ?? null;
@@ -28,6 +29,7 @@ export const authConfig = {
     session({ session, token }) {
       if (session.user) {
         session.user.id = token.sub ?? "";
+        session.user.username = token.username ?? null;
         session.user.role = token.role;
         session.user.organizationId = token.organizationId;
         session.user.memberId = token.memberId ?? null;

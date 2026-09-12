@@ -1,26 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { PageHeader, EmptyState } from "@/components/app/page-header";
 import { MonthPicker } from "@/components/app/month-picker";
 import { StatCard } from "@/components/app/stat-card";
-import { PaidBadge } from "@/components/app/member-badges";
 import { requireOrgReader } from "@/lib/session";
 import { canWrite } from "@/lib/rbac";
 import { formatTakaShort } from "@/lib/money";
-import { formatDate, formatMonthKey } from "@/lib/dates";
-import { getDuesForMonth, listContributions } from "@/server/contributions";
+import { formatMonthKey } from "@/lib/dates";
+import { getDuesForMonth } from "@/server/contributions";
 import { resolveMonth } from "@/server/progress";
 import { QuickCollect } from "./quick-collect";
+import { DuesTable } from "./dues-table";
 
 export const metadata: Metadata = { title: "Dues" };
 
@@ -36,9 +27,9 @@ export default async function DuesPage({ searchParams }: PageProps<"/dues">) {
   const dues = await getDuesForMonth(session.organizationId, monthKey);
   const writable = canWrite(session.role);
 
-  // Default the bulk amount to whatever the society most recently collected.
-  const recent = await listContributions(session.organizationId, { take: 1 });
-  const suggestedAmount = recent[0]?.amount.toNumber() ?? null;
+  // The month's own rate — not the last amount collected, which drifts across a
+  // rate change and would then be pre-filled wrong for a whole year.
+  const suggestedAmount = dues.expectedAmount || null;
 
   const rows = dues.rows.filter((row) =>
     showOnly === "pending" ? !row.paid : showOnly === "paid" ? row.paid : true,
@@ -117,73 +108,19 @@ export default async function DuesPage({ searchParams }: PageProps<"/dues">) {
         ))}
       </div>
 
-      {rows.length === 0 ? (
+      {dues.dueCount === 0 ? (
         <EmptyState
-          title={
-            dues.dueCount === 0
-              ? `No active members were liable for ${formatMonthKey(monthKey)}`
-              : "Nothing to show for this filter"
-          }
-          description={
-            dues.dueCount === 0
-              ? "Members who joined after this month are not counted as due."
-              : undefined
-          }
+          title={`No active members were liable for ${formatMonthKey(monthKey)}`}
+          description="Members who joined after this month are not counted as due."
         />
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-20">ID</TableHead>
-                <TableHead>Member</TableHead>
-                <TableHead className="hidden sm:table-cell">Paid on</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-                <TableHead className="text-right">Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((row) => (
-                <TableRow
-                  key={row.memberId}
-                  className={row.paid || dues.isFuture ? undefined : "bg-destructive/5"}
-                >
-                  <TableCell className="font-mono text-xs">{row.memberCode}</TableCell>
-                  <TableCell>
-                    <Link
-                      href={`/members/${row.memberId}`}
-                      className="font-medium underline-offset-4 hover:underline"
-                    >
-                      {row.name}
-                    </Link>
-                    {!row.paid && !dues.isFuture && row.phone ? (
-                      <a
-                        href={`tel:${row.phone}`}
-                        className="text-muted-foreground mt-0.5 flex items-center gap-1 text-xs"
-                      >
-                        <Phone className="size-3" />
-                        {row.phone}
-                      </a>
-                    ) : null}
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    {row.paidOnDate ? formatDate(row.paidOnDate) : "—"}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {row.amount === null ? "—" : formatTakaShort(row.amount)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <PaidBadge
-                      paid={row.paid}
-                      isFuture={dues.isFuture}
-                      paidInAdvance={row.paidInAdvance}
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <DuesTable
+          rows={rows}
+          monthKey={monthKey}
+          expectedAmount={dues.expectedAmount}
+          isFuture={dues.isFuture}
+          writable={writable}
+        />
       )}
     </>
   );

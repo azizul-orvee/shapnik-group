@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { PageHeader } from "@/components/app/page-header";
 import { requireWriter } from "@/lib/session";
 import { listMembers } from "@/server/members";
-import { currentMonthKey } from "@/lib/dates";
 import { getSocietySettings } from "@/server/progress";
+import { listYearPlans, planForMonthKey } from "@/server/years";
 import { ContributionForm } from "../contribution-form";
 
 export const metadata: Metadata = { title: "Log a payment" };
@@ -15,10 +15,13 @@ export default async function NewContributionPage({
   const params = await searchParams;
   const preselected = typeof params.memberId === "string" ? params.memberId : "";
 
-  const [members, settings] = await Promise.all([
+  const [members, settings, plans] = await Promise.all([
     listMembers(session.organizationId, { status: "ACTIVE" }),
     getSocietySettings(session.organizationId),
+    listYearPlans(session.organizationId),
   ]);
+
+  const activePlan = planForMonthKey(plans, settings.activeMonthKey) ?? plans[0];
 
   return (
     <>
@@ -28,12 +31,14 @@ export default async function NewContributionPage({
       />
       <ContributionForm
         members={members.map((m) => ({ id: m.id, name: m.name, memberId: m.memberId }))}
-        settings={settings}
+        plans={plans}
+        window={{ startMonthKey: settings.startMonthKey, endMonthKey: settings.endMonthKey }}
         defaultValues={{
           memberId: preselected,
           type: "MONTHLY",
-          amount: settings.monthlyAmount,
+          amount: activePlan?.monthlyAmount ?? 0,
           paidForMonth: settings.activeMonthKey,
+          paidForYear: Number(settings.activeMonthKey.slice(0, 4)),
           paidOnDate: new Date().toISOString().slice(0, 10),
           note: "",
         }}

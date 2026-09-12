@@ -1,6 +1,7 @@
 "use client";
 
-import { LogOut } from "lucide-react";
+import Link from "next/link";
+import { LogOut, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,12 +14,12 @@ import {
 
 export function UserMenu({
   name,
-  email,
+  signInId,
   roleLabel,
   signOutAction,
 }: {
   name: string;
-  email: string;
+  signInId: string;
   roleLabel: string;
   signOutAction: () => Promise<void>;
 }) {
@@ -42,10 +43,18 @@ export function UserMenu({
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>
           <div className="font-medium">{name}</div>
-          <div className="text-muted-foreground truncate text-xs font-normal">{email}</div>
+          <div className="text-muted-foreground truncate font-mono text-xs font-normal">
+            {signInId}
+          </div>
           <div className="text-muted-foreground mt-1 text-xs font-normal">{roleLabel}</div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href="/profile" className="cursor-pointer">
+            <UserRound className="size-4" />
+            My profile
+          </Link>
+        </DropdownMenuItem>
         <form action={signOutAction}>
           <DropdownMenuItem asChild>
             <button type="submit" className="w-full cursor-pointer">
