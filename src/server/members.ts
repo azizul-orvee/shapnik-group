@@ -2,7 +2,7 @@ import "server-only";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { ApiError, conflict, notFound } from "@/lib/api";
-import { monthKeyToDate, monthRange } from "@/lib/dates";
+import { dateToMonthKey, monthKeyToDate, monthRange } from "@/lib/dates";
 import { ledgerDescription } from "@/server/contributions";
 import { getSocietySettings } from "@/server/progress";
 import { requireYearPlan } from "@/server/years";
@@ -150,65 +150,72 @@ export async function createMember(
       },
     });
 
-    // Settle each past year: a monthly row per in-season month, plus the fee.
-    // Each contribution carries its matching cash-book IN row in this same
-    // transaction, so the ledger never drifts from the contribution list.
+    // Build every past-year row up front and write them in two batched inserts.
+    // A per-row loop is ~20 sequential round-trips, which times out when the
+    // function and the database sit in different regions.
+    const rows: {
+      organizationId: string;
+      memberId: string;
+      type: "MONTHLY" | "ONE_TIME";
+      amount: number;
+      paidForYear: number;
+      paidForMonth: Date | null;
+      paidOnDate: Date;
+      recordedById: string;
+    }[] = [];
     for (const plan of pastPlans) {
       for (const monthKey of monthRange(plan.startMonthKey, plan.endMonthKey)) {
         const paidOnDate = monthKeyToDate(monthKey);
-        const contribution = await tx.contribution.create({
-          data: {
-            organizationId,
-            memberId: member.id,
-            type: "MONTHLY",
-            amount: plan.monthlyAmount,
-            paidForYear: plan.year,
-            paidForMonth: paidOnDate,
-            paidOnDate,
-            recordedById,
-          },
-        });
-        await tx.fundTransaction.create({
-          data: {
-            organizationId,
-            type: "IN",
-            amount: plan.monthlyAmount,
-            description: ledgerDescription(member.name, member.memberId, monthKey, plan.year),
-            date: paidOnDate,
-            contributionId: contribution.id,
-            recordedById,
-          },
-        });
-      }
-
-      const feeDate = monthKeyToDate(plan.startMonthKey);
-      const fee = await tx.contribution.create({
-        data: {
+        rows.push({
           organizationId,
           memberId: member.id,
-          type: "ONE_TIME",
-          amount: plan.oneTimeFee,
+          type: "MONTHLY",
+          amount: plan.monthlyAmount,
           paidForYear: plan.year,
-          paidForMonth: null,
-          paidOnDate: feeDate,
+          paidForMonth: paidOnDate,
+          paidOnDate,
           recordedById,
-        },
+        });
+      }
+      rows.push({
+        organizationId,
+        memberId: member.id,
+        type: "ONE_TIME",
+        amount: plan.oneTimeFee,
+        paidForYear: plan.year,
+        paidForMonth: null,
+        paidOnDate: monthKeyToDate(plan.startMonthKey),
+        recordedById,
       });
-      await tx.fundTransaction.create({
-        data: {
+    }
+
+    if (rows.length > 0) {
+      // Each contribution still gets its matching cash-book IN row, created in
+      // this same transaction so the ledger never drifts.
+      const created = await tx.contribution.createManyAndReturn({
+        data: rows,
+        select: { id: true, amount: true, paidForMonth: true, paidForYear: true, paidOnDate: true },
+      });
+      await tx.fundTransaction.createMany({
+        data: created.map((c) => ({
           organizationId,
-          type: "IN",
-          amount: plan.oneTimeFee,
-          description: ledgerDescription(member.name, member.memberId, undefined, plan.year),
-          date: feeDate,
-          contributionId: fee.id,
+          type: "IN" as const,
+          amount: c.amount,
+          description: ledgerDescription(
+            member.name,
+            member.memberId,
+            c.paidForMonth ? dateToMonthKey(c.paidForMonth) : undefined,
+            c.paidForYear,
+          ),
+          date: c.paidOnDate,
+          contributionId: c.id,
           recordedById,
-        },
+        })),
       });
     }
 
     return member;
-  });
+  }, { timeout: 30_000, maxWait: 15_000 });
 }
 
 export async function updateMember(

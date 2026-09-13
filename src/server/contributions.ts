@@ -422,35 +422,46 @@ export async function recordInitialSetup(
 
   const paidOnDate = new Date(`${input.paidOnDate}T00:00:00.000Z`);
 
-  await prisma.$transaction(async (tx) => {
-    for (const part of plan.parts) {
-      const monthKey = part.kind === "MONTHLY" ? part.monthKey : undefined;
-      const contribution = await tx.contribution.create({
-        data: {
-          organizationId,
-          memberId: member.id,
-          type: part.kind,
-          amount: part.amount,
-          paidForYear: input.paidForYear,
-          paidForMonth: monthKey ? monthKeyToDate(monthKey) : null,
-          paidOnDate,
-          note: input.note ?? null,
-          recordedById,
-        },
+  // Written in two batched inserts rather than a row-at-a-time loop, so a full
+  // year's worth of parts stays well inside the transaction timeout even when
+  // the function and database are in different regions.
+  const rows = plan.parts.map((part) => ({
+    organizationId,
+    memberId: member.id,
+    type: part.kind,
+    amount: part.amount,
+    paidForYear: input.paidForYear,
+    paidForMonth: part.kind === "MONTHLY" ? monthKeyToDate(part.monthKey) : null,
+    paidOnDate,
+    note: input.note ?? null,
+    recordedById,
+  }));
+
+  await prisma.$transaction(
+    async (tx) => {
+      const created = await tx.contribution.createManyAndReturn({
+        data: rows,
+        select: { id: true, amount: true, paidForMonth: true },
       });
-      await tx.fundTransaction.create({
-        data: {
+      await tx.fundTransaction.createMany({
+        data: created.map((c) => ({
           organizationId,
-          type: "IN",
-          amount: part.amount,
-          description: ledgerDescription(member.name, member.memberId, monthKey, input.paidForYear),
+          type: "IN" as const,
+          amount: c.amount,
+          description: ledgerDescription(
+            member.name,
+            member.memberId,
+            c.paidForMonth ? dateToMonthKey(c.paidForMonth) : undefined,
+            input.paidForYear,
+          ),
           date: paidOnDate,
-          contributionId: contribution.id,
+          contributionId: c.id,
           recordedById,
-        },
+        })),
       });
-    }
-  });
+    },
+    { timeout: 30_000, maxWait: 15_000 },
+  );
 
   return {
     created: plan.parts.length,
