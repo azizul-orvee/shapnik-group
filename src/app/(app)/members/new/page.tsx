@@ -1,14 +1,12 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/app/page-header";
 import { requireWriter } from "@/lib/session";
-import { suggestMemberCode } from "@/server/members";
 import { MemberForm } from "../member-form";
 
 export const metadata: Metadata = { title: "Add member" };
 
 export default async function NewMemberPage() {
-  const session = await requireWriter();
-  const suggestedCode = await suggestMemberCode(session.organizationId);
+  await requireWriter();
 
   return (
     <>
@@ -16,7 +14,7 @@ export default async function NewMemberPage() {
       <MemberForm
         defaultValues={{
           name: "",
-          memberId: suggestedCode,
+          memberId: "",
           phone: "",
           nationalId: "",
           nomineeName: "",

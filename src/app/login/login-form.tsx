@@ -41,7 +41,6 @@ export function LoginForm() {
           autoComplete="username"
           autoCapitalize="characters"
           required
-          placeholder="M-001"
           className="h-11"
         />
         <p className="text-muted-foreground text-xs">
