@@ -182,9 +182,19 @@ login.
 The admin registers each member with their name, member ID, phone, NID, nominee
 name and nominee NID (nominee phone optional). Their login is created
 automatically. Correcting a member's NID or ID also moves their login, so the
-details on screen are always the ones that work.
+details on screen are always the ones that work. Member IDs are stored
+uppercased, so an ID is unique regardless of case.
 
-The society is capped at **30 active members**; deactivating one frees a slot.
+There is no join-date field — every member joins at the society's opening month.
+On creation, all fully-elapsed past years (2025) are recorded as paid in full,
+and the admin lands on a **payment setup window** for the current year: tick the
+months and fee already paid, and optionally enter one extra lump sum that fills
+the remaining months oldest-first and then the fee.
+
+The society is capped at **30 members**; deleting one frees a slot. **Deleting a
+member is permanent** — it removes the member, their login and all their payments
+— so it asks the admin to re-enter their password first. There is no
+active/inactive state.
 
 Everyone can edit their own details at **`/profile`** — the admin fills theirs in
 whenever they like, and changing an NID there changes the password too.
@@ -199,7 +209,7 @@ whenever they like, and changing an NID there changes the password too.
 | --- | --- | --- |
 | Dashboard, dues, fund, reports | ✅ | — |
 | Years (view 2025/2026, add/edit 2027+) | ✅ | — |
-| Add / edit / deactivate members | ✅ | — |
+| Add / edit / delete members | ✅ | — |
 | Log contributions | ✅ | — |
 | Own contribution history and PDF | ✅ | ✅ own only |
 | Edit own profile | ✅ | ✅ |
@@ -215,7 +225,8 @@ and its own statement PDF. Authorization is enforced in the API layer
   kept in sync with year plans.
 - **YearPlan** — monthly rate, extra fee, and season for one calendar year.
 - **Member** — a person on the roll. `memberId` is the passbook code, unique per
-  organisation. Members are deactivated, never deleted, so their history survives.
+  organisation (stored uppercased). Deleting a member is permanent and takes their
+  login, payments and cash-book rows with it, guarded by the admin's password.
 - **Contribution** — one payment, either `MONTHLY` or `ONE_TIME`. `paidForYear`
   is which year's obligation it counts toward. For monthly payments `paidForMonth`
   is a Postgres `date` pinned to the first of the month in UTC, and

@@ -179,9 +179,12 @@ src/
     money.ts        formatTaka / formatTakaShort / toNumber
     http.ts         apiRequest() + ApiRequestError
     allocate.ts     planLumpSum() — how one large payment is split across a
-                    year's fee and its unpaid months. Pure and client-safe, so
-                    the preview the treasurer approves and the rows the server
-                    writes come from the same call.
+                    year's fee and its unpaid months. planInitialSetup() — the
+                    new-member setup window's split: ticked months/fee at full
+                    rate, then a lump sum fills the remaining months oldest-first
+                    then the fee. Both pure and client-safe, so the preview the
+                    admin approves and the rows the server writes come from the
+                    same call.
     pdf-format.ts   pdfAmount / pdfDate / pdfText (ASCII-folds typographic chars)
     utils.ts        shadcn cn()
 
@@ -193,10 +196,11 @@ src/
     years.ts        YearPlan CRUD. listYearPlans, getYearPlan, create/update/delete.
                     2025–2026 cannot be edited; 2027+ is admin-added (not seeded).
     members.ts      listMembers, findMember/getMember (+WithContributions),
-                    createMember, updateMember, setMemberStatus, suggestMemberCode
+                    createMember, updateMember, deleteMember, suggestMemberCode
     contributions.ts listContributions, createContribution, createContributionsBulk,
                     updateContribution, deleteContribution, getDuesForMonth,
-                    getYearObligation, recordLumpSum
+                    getYearObligation, recordLumpSum, recordInitialSetup,
+                    ledgerDescription (exported for the member auto-settlement)
     fund.ts         getFundTotals, getFundGrowth (+ dormant spending fns, see §8)
     reports.ts      buildMemberStatement, buildMonthlySummary, buildAnnualReport,
                     listReportYears
@@ -217,6 +221,7 @@ src/
 | `/control_panel` | anon | admin only, three factors, `noindex` |
 | `/dashboard` | org readers | society progress, chase list |
 | `/members`, `/members/new`, `/members/[id]`, `/members/[id]/edit` | org readers / writers | |
+| `/members/[id]/setup` | writers | record a new member's initial payments (shown right after creation) |
 | `/contributions`, `/contributions/new` | org readers / writers | |
 | `/dues` | org readers | per-month paid/pending + bulk collect |
 | `/fund` | org readers | totals, growth chart, recent payments |
@@ -230,7 +235,8 @@ src/
 | --- | --- |
 | `/api/auth/[...nextauth]` | GET POST |
 | `/api/members` | GET POST |
-| `/api/members/[id]` | GET PATCH DELETE (DELETE = deactivate) |
+| `/api/members/[id]` | GET PATCH DELETE (DELETE = permanent, needs admin password) |
+| `/api/members/[id]/setup` | POST (record a new member's initial payments) |
 | `/api/contributions` | GET POST |
 | `/api/contributions/[id]` | PATCH DELETE |
 | `/api/contributions/bulk` | POST |
@@ -261,8 +267,14 @@ kept in sync with YearPlan rows.
 seed or migrate a placeholder 2027 row.
 
 **Member** — `memberId` is the passbook code, unique per org, and doubles as the
-member's sign-in username. Members are **deactivated, never deleted**
-(`DELETE /api/members/[id]` sets `INACTIVE`), so their payment history survives.
+member's sign-in username, stored **uppercased** so an ID is unique regardless of
+case. Members are **permanently deleted** — `DELETE /api/members/[id]` removes the
+member, their login, contributions and linked cash-book rows in one
+`$transaction`, after re-checking the admin's password. There is **no
+active/inactive state**; `Member.status` remains in the schema, dormant at
+`ACTIVE`, to avoid a migration. Members join at `Organization.startMonth` (no
+join-date field), and `createMember()` auto-settles every fully-elapsed past year
+(2025) as paid in full in that same transaction.
 
 The admin records `name`, `memberId`, `phone`, `nationalId`, `nomineeName` and
 `nomineeNationalId` — all required — plus an optional `nomineePhone`.
@@ -317,7 +329,7 @@ optional `memberId`.
   fill them in at `/profile` whenever they like.
 
 **Member cap.** `Organization.memberLimit` (default **30**) limits **active**
-members. `createMember()` enforces it and returns 409 when full; deactivating a
+members. `createMember()` enforces it and returns 409 when full; deleting a
 member frees a slot.
 
 ### Migrations
@@ -472,6 +484,17 @@ wrong produces a wall of resolver type errors.
     without it. To repair a database seeded before the fix, re-seed
     (`npx prisma migrate reset --force`).
 
+12. **A row-at-a-time transaction timed out in production.** `createMember`'s
+    auto-settlement of 2025 did ~22 sequential INSERTs inside one interactive
+    `$transaction`. It passed every local test, but on Vercel (a different region
+    from the Neon database in Singapore) the round-trips exceeded Prisma's 5s
+    interactive-transaction limit — a `P2028` surfacing as a plain 500 "Something
+    went wrong" on *the first ever member creation*. Fixed by batching:
+    `createManyAndReturn()` for the contributions, then `createMany()` for their
+    cash-book rows, with a raised `{ timeout }`. `recordInitialSetup` uses the
+    same shape. **Keep bulk DB work batched** — a per-row loop over a remote
+    database does not scale to a transaction.
+
 ### Verification gotchas
 
 - **Status codes are not proof.** A page that throws renders `error.tsx` with a
@@ -556,7 +579,7 @@ Every member has a login of their member ID + NID; the admin's three factors com
 from the environment. The seed prints what it applied. Real credentials live in
 `.env` (gitignored) — `.env.example` ships placeholders.
 
-The seed builds **30 active members** (joined 1 Apr 2025) with generated NIDs and
+The seed builds **30 members** (joined 1 Apr 2025) with generated NIDs and
 nominee details, **2025 fully paid** (Apr–Dec at ৳5,000 plus the ৳25,000 fee),
 monthly contributions from Jan 2026 to today with two members left unpaid in the
 current month, and a spread of 2026 fee states (24 cleared, 6 part-paid). There

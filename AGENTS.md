@@ -108,8 +108,17 @@ do not reintroduce them.
 - `User.email` still exists but nothing signs in with it.
 
 An admin registers a member with **name, member ID, phone, NID, nominee name and
-nominee NID**; nominee phone is the only optional field. `createMember()` also
-creates their login in the same transaction.
+nominee NID**; nominee phone is the only optional field. There is **no join-date
+field** — every member joins at the society's opening month
+(`Organization.startMonth`). Member IDs are stored **uppercased**, so an ID is
+unique regardless of case. `createMember()` creates their login in the same
+transaction and, in that same transaction, **auto-settles every fully-elapsed
+past year** (2025) as paid in full — each in-season month plus the year's fee,
+each with its cash-book row. New members are then sent to a **payment setup
+window** (`/members/[id]/setup`) for the current year: tick the whole months and
+fee already paid, plus an optional lump sum split by `planInitialSetup()`
+(`src/lib/allocate.ts`) — ticked months first, then the lump sum fills the
+remaining months oldest-first and finally the fee.
 
 **The NID is a credential, so it must stay in step with the password.**
 `updateMember()` and `updateProfile()` both re-hash the password when the NID
@@ -121,8 +130,8 @@ working.
 `redactMember()` masks `nationalId` and `nomineeNationalId` for non-admins; the
 member API routes and the member detail page both apply it.
 
-`Organization.memberLimit` (default **30**) caps **active** members; deactivating
-frees a slot. `createMember()` enforces it.
+`Organization.memberLimit` (default **30**) caps members; deleting one frees a
+slot. `createMember()` enforces it.
 
 Anyone may edit **their own** account at `/profile` (`PATCH /api/profile`) — never
 anyone else's. `/users` is a read-only roster: member logins come from member
@@ -152,6 +161,12 @@ creation, and the admin is seeded.
   directly editable. `FundTransaction` still exists and still records an `IN` row
   per contribution, but nothing writes `OUT` rows — expense tracking was removed
   from the UI, so the table is effectively collections-only until it comes back.
+  **Bulk settlement stays batched:** the auto-2025 path and `recordInitialSetup()`
+  write many rows at once with `createManyAndReturn()` (contributions) then
+  `createMany()` (their cash-book rows) inside one `$transaction` with a raised
+  timeout. A row-at-a-time loop is too many round-trips and times out when the
+  function and Neon sit in different regions — that is a real production bug that
+  already bit, so keep bulk writes batched.
 - **Progress figures come from one place.** `src/server/progress.ts` defines what
   "paid", "owed today" and "on track" mean. Every view — dashboard, member
   statement, the pace chart — must read from it, so a headline number and a chart
@@ -163,8 +178,11 @@ creation, and the admin is seeded.
   counts the extra fee by `paidForYear`, not by `paidOnDate`.
 - **Money is `Decimal`.** Call `.toNumber()` only at the edge, when formatting.
   Use `formatTaka` / `formatTakaShort` from `src/lib/money.ts`.
-- **Members are deactivated, not deleted.** `DELETE /api/members/[id]` sets
-  status to `INACTIVE`.
+- **Members are permanently deleted.** `DELETE /api/members/[id]` removes the
+  member, their login, contributions and linked cash-book rows in one
+  `$transaction`, after re-checking the admin's password (`memberDeleteSchema`).
+  There is no active/inactive state; `Member.status` stays in the schema, dormant
+  at `ACTIVE`, to avoid a migration — do not reintroduce deactivation.
 - **Member-facing views show aggregates only.** `/my-statement` may show the
   member's own figures and society-wide **totals**, but never another member's
   name, balance or standing. Guard this when adding data to any member page —
