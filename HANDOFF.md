@@ -310,7 +310,10 @@ optional `memberId`.
 - `User.username` is the ID — the admin's from `ADMIN_LOGIN_ID`, a member's from
   `Member.memberId`. Unique *per organisation*, so `findByUsername()` refuses to
   guess when an ID matches twice; a real multi-tenant deployment needs an org
-  selector.
+  selector. **The admin's ID shares this space with member IDs, so it must be
+  distinct from all of them** — use a non-numeric ID like `admin` so a member can
+  hold `01`. The admin is a login only (never a `Member`); to track the admin's
+  own contributions, register them as a normal member with their own member ID.
 - `User.passwordHash` = bcrypt(NID), the shared second factor.
   `User.adminPasswordHash` = bcrypt(admin password), the third factor, null for
   members.

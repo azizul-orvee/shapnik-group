@@ -90,7 +90,11 @@ do not reintroduce them.
   must use `/control_panel`. `admin-login` refuses anyone who is not an ADMIN
   with `adminPasswordHash` set.
 - `User.username` is the ID (admin from `ADMIN_LOGIN_ID`, member from
-  `memberId`), unique per organisation.
+  `memberId`), unique per organisation. **The admin's login ID must be distinct
+  from every member ID** — it shares the `username` space with them. Use a
+  non-numeric ID like `admin`, so a member can still hold `01`. The admin is a
+  login only, never a `Member`; to track the admin's own dues, register them as
+  an ordinary member with their own member ID.
 - `User.passwordHash` is bcrypt of the NID — the shared second factor.
 - `User.adminPasswordHash` is bcrypt of the admin's separate password, the third
   factor. Null for members.
