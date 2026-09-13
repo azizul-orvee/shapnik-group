@@ -15,17 +15,11 @@ import { PageHeader, EmptyState } from "@/components/app/page-header";
 import { StatCard } from "@/components/app/stat-card";
 import { Meter, MeterLegend, ProgressRing } from "@/components/app/meter";
 import { MonthGrid, MonthGridLegend } from "@/components/app/month-grid";
-import { PaceChart } from "@/components/app/pace-chart";
 import { requireSession } from "@/lib/session";
 import { formatTakaShort } from "@/lib/money";
 import { formatDate, formatMonthKey } from "@/lib/dates";
 import { buildMemberStatement } from "@/server/reports";
-import {
-  getMemberCumulative,
-  getMemberProgress,
-  getSocietyProgress,
-  resolveYear,
-} from "@/server/progress";
+import { getMemberProgress, getSocietyProgress, resolveYear } from "@/server/progress";
 import { getYearObligation } from "@/server/contributions";
 import { getFundTotals } from "@/server/fund";
 import { YearTabs } from "@/components/app/year-tabs";
@@ -52,10 +46,9 @@ export default async function MyStatementPage({ searchParams }: PageProps<"/my-s
     );
   }
 
-  const [statement, progress, pace, obligation, society, fund] = await Promise.all([
+  const [statement, progress, obligation, society, fund] = await Promise.all([
     buildMemberStatement(session.organizationId, session.memberId),
     getMemberProgress(session.organizationId, session.memberId, year),
-    getMemberCumulative(session.organizationId, session.memberId, year),
     getYearObligation(session.organizationId, session.memberId, year),
     // Society-wide figures shown to members are aggregates only — never another
     // member's name, balance or standing.
@@ -305,20 +298,6 @@ export default async function MyStatementPage({ searchParams }: PageProps<"/my-s
             year={year}
           />
           <MonthGridLegend showPartial={hasPartialMonth} />
-        </CardContent>
-      </Card>
-
-      <Card className="mt-4">
-        <CardHeader>
-          <CardTitle className="text-base">Paid against target pace</CardTitle>
-          <CardDescription>
-            Your running total against what you owe as the year goes on — the fee up
-            front, then {formatTakaShort(progress.monthlyAmount)} a month, reaching{" "}
-            {formatTakaShort(progress.totalTarget)} by {plan.endMonthKey.slice(5) === "12" ? "December" : formatMonthKey(plan.endMonthKey)}.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="px-2 sm:px-4">
-          <PaceChart data={pace} />
         </CardContent>
       </Card>
 
