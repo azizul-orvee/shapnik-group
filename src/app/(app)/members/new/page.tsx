@@ -22,7 +22,6 @@ export default async function NewMemberPage() {
           nomineeName: "",
           nomineeNationalId: "",
           nomineePhone: "",
-          joinDate: new Date().toISOString().slice(0, 10),
           status: "ACTIVE",
         }}
       />

@@ -70,7 +70,6 @@ export const memberCreateSchema = z.object({
     .refine((v) => v === undefined || /^01\d{9}$/.test(v), {
       message: "Enter an 11-digit number starting 01",
     }),
-  joinDate: isoDate,
   status: z.enum(["ACTIVE", "INACTIVE"]).default("ACTIVE"),
 });
 

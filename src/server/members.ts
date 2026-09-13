@@ -88,19 +88,23 @@ export async function createMember(organizationId: string, input: MemberCreateIn
   });
   if (existing) throw conflict(`Member ID "${input.memberId}" is already in use`);
 
+  // Members are entered as founding members: they owe from the society's
+  // opening month, so their join date is the organisation's start month rather
+  // than something the admin types in.
+  const organization = await prisma.organization.findUniqueOrThrow({
+    where: { id: organizationId },
+    select: { memberLimit: true, startMonth: true },
+  });
+
   // The society is capped; deactivating a member frees their slot.
   if ((input.status ?? "ACTIVE") === "ACTIVE") {
-    const { memberLimit } = await prisma.organization.findUniqueOrThrow({
-      where: { id: organizationId },
-      select: { memberLimit: true },
-    });
     const active = await prisma.member.count({
       where: { organizationId, status: "ACTIVE" },
     });
-    if (active >= memberLimit) {
+    if (active >= organization.memberLimit) {
       throw new ApiError(
         409,
-        `The society is limited to ${memberLimit} active members. Deactivate someone before adding another.`,
+        `The society is limited to ${organization.memberLimit} active members. Deactivate someone before adding another.`,
       );
     }
   }
@@ -118,7 +122,7 @@ export async function createMember(organizationId: string, input: MemberCreateIn
         nomineeName: input.nomineeName,
         nomineeNationalId: input.nomineeNationalId,
         nomineePhone: input.nomineePhone ?? null,
-        joinDate: new Date(`${input.joinDate}T00:00:00.000Z`),
+        joinDate: organization.startMonth,
         status: input.status ?? "ACTIVE",
       },
     });
@@ -176,9 +180,6 @@ export async function updateMember(
           ? { nomineeNationalId: input.nomineeNationalId }
           : {}),
         ...("nomineePhone" in input ? { nomineePhone: input.nomineePhone ?? null } : {}),
-        ...(input.joinDate !== undefined
-          ? { joinDate: new Date(`${input.joinDate}T00:00:00.000Z`) }
-          : {}),
         ...(input.status !== undefined ? { status: input.status } : {}),
       },
     });

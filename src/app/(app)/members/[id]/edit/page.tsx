@@ -26,7 +26,6 @@ export default async function EditMemberPage({ params }: PageProps<"/members/[id
           nomineeName: member.nomineeName,
           nomineeNationalId: member.nomineeNationalId,
           nomineePhone: member.nomineePhone ?? "",
-          joinDate: member.joinDate.toISOString().slice(0, 10),
           status: member.status,
         }}
       />

@@ -153,10 +153,6 @@ export function MemberForm({ memberId, defaultValues }: Props) {
         </Field>
       </fieldset>
 
-      <Field id="joinDate" label="Join date" error={errors.joinDate?.message}>
-        <Input id="joinDate" type="date" {...register("joinDate")} />
-      </Field>
-
       <Field
         id="status"
         label="Status"
