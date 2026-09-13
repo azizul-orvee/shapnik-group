@@ -173,7 +173,7 @@ creation, and the admin is seeded.
   already bit, so keep bulk writes batched.
 - **Progress figures come from one place.** `src/server/progress.ts` defines what
   "paid", "owed today" and "on track" mean. Every view — dashboard, member
-  statement, the pace chart — must read from it, so a headline number and a chart
+  statement, every chart — must read from it, so a headline number and a chart
   on the same page can never disagree.
 - **`paidForMonth` is a UTC-midnight `date`** on the first of the month. Build it
   with `monthKeyToDate()` from `src/lib/dates.ts`; never construct it inline.

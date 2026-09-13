@@ -405,7 +405,7 @@ Rules that are load-bearing:
 | `YearTabs` | year chips for `?year=` or `/years/[year]` |
 | `MemberProgressList` | per-member meters + status band (the chase list) |
 | `CollectionChart` | paid vs pending members per month |
-| `PaceChart` | cumulative paid vs what is owed as the year goes on |
+| `PaceChart` | cumulative paid vs what is owed as the year goes on (no longer rendered — see §8) |
 | `CoversLabel` | "August 2026" or "One-time fee 2025" with matching dot |
 | `PaidBadge` | paid / paid ahead / part paid / not due yet / pending |
 | `DuesTable` | `/dues` list with search + one-tap collection (client) |
@@ -520,8 +520,13 @@ Deliberately left in place, but nothing references them:
   `updateTransaction`, `deleteTransaction`, `getLedgerWithRunningBalance`
 - `src/lib/validation.ts` — `transactionCreateSchema`, `transactionUpdateSchema`
 - `src/lib/dates.ts` — `lastNMonths`
+- `src/components/app/pace-chart.tsx` (`PaceChart`) and
+  `src/server/progress.ts` `getMemberCumulative` — the "Paid against target pace"
+  card was removed from `/my-statement`. Both are now unrendered; kept in case the
+  chart is wanted back on a member or admin view. Delete both if it is gone for
+  good.
 
-These are the expense-tracking machinery. The UI and `/api/transactions` were
+The first three are the expense-tracking machinery. The UI and `/api/transactions` were
 removed when spending went out of scope, but `FundTransaction` still records an
 `IN` row per contribution, so expenses can come back without a migration. **Delete
 them if spending is off the table for good; otherwise leave them.**
@@ -639,7 +644,7 @@ so they run as real Node modules instead of being bundled. Keep them there.
 | --- | --- |
 | Rates or the window | `YearPlan` / `getYearPlan()` — 2025 and 2026 stay uneditable; do not seed 2027 |
 | `paidForYear` on a contribution | progress, statements, PDFs and the cash-book description must follow the year |
-| Anything about "paid" / "owed" / "on track" | `src/server/progress.ts`, then confirm dashboard, `/my-statement` and the pace chart still agree |
+| Anything about "paid" / "owed" / "on track" | `src/server/progress.ts`, then confirm dashboard and `/my-statement` still agree |
 | A Zod schema | forms *and* routes share it — check both |
 | `Contribution` writes | the linked `FundTransaction` must move in the same `$transaction` |
 | How a lump sum is split | `src/lib/allocate.ts` only — the dialog preview and `recordLumpSum()` both call it, so changing one place changes both |
