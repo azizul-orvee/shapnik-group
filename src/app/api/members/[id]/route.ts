@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { handler, parseBody, requireApiOrgReader, requireApiWriter } from "@/lib/api";
-import { memberUpdateSchema } from "@/lib/validation";
+import { memberDeleteSchema, memberUpdateSchema } from "@/lib/validation";
 import {
+  deleteMember,
   getMemberWithContributions,
   redactMember,
-  setMemberStatus,
   updateMember,
 } from "@/server/members";
 import { canWrite } from "@/lib/rbac";
@@ -27,11 +27,13 @@ export const PATCH = handler(async (request: Request, { params }: Context) => {
 });
 
 /**
- * Members are deactivated, never deleted — their payment history stays on the books.
+ * Permanently deletes a member and everything tied to them — login,
+ * contributions and cash-book rows. Re-checks the admin's password first.
  */
-export const DELETE = handler(async (_request: Request, { params }: Context) => {
+export const DELETE = handler(async (request: Request, { params }: Context) => {
   const session = await requireApiWriter();
   const { id } = await params;
-  const member = await setMemberStatus(session.organizationId, id, "INACTIVE");
-  return NextResponse.json({ member });
+  const input = await parseBody(request, memberDeleteSchema);
+  await deleteMember(session.organizationId, session.userId, input.adminPassword, id);
+  return NextResponse.json({ ok: true });
 });

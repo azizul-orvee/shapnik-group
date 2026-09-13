@@ -22,7 +22,6 @@ export default async function NewMemberPage() {
           nomineeName: "",
           nomineeNationalId: "",
           nomineePhone: "",
-          status: "ACTIVE",
         }}
       />
     </>

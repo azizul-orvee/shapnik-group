@@ -40,10 +40,6 @@ export function MemberStatementDocument({ statement }: { statement: MemberStatem
             <Text style={styles.metaValue}>{pdfDate(member.joinDate)}</Text>
           </View>
           <View style={styles.metaItem}>
-            <Text style={styles.metaLabel}>Status</Text>
-            <Text style={styles.metaValue}>{member.status}</Text>
-          </View>
-          <View style={styles.metaItem}>
             <Text style={styles.metaLabel}>Months paid</Text>
             <Text style={styles.metaValue}>{monthsPaid}</Text>
           </View>

@@ -14,7 +14,6 @@ export type MemberStatement = {
     memberCode: string;
     phone: string | null;
     joinDate: Date;
-    status: string;
   };
   rows: Array<{
     id: string;
@@ -69,7 +68,6 @@ export async function buildMemberStatement(
       memberCode: member.memberId,
       phone: member.phone,
       joinDate: member.joinDate,
-      status: member.status,
     },
     rows,
     total: rows.reduce((sum, r) => sum + r.amount, 0),
@@ -107,7 +105,7 @@ export type AnnualReport = Awaited<ReturnType<typeof buildAnnualReport>>;
 export async function buildAnnualReport(organizationId: string, year: number) {
   const { start, end } = yearBounds(year);
 
-  const [organization, opening, movement, contributionAgg, memberCounts, monthlyRows] =
+  const [organization, opening, movement, contributionAgg, memberCount, monthlyRows] =
     await Promise.all([
       prisma.organization.findUniqueOrThrow({
         where: { id: organizationId },
@@ -120,11 +118,7 @@ export async function buildAnnualReport(organizationId: string, year: number) {
         _sum: { amount: true },
         _count: true,
       }),
-      prisma.member.groupBy({
-        by: ["status"],
-        where: { organizationId },
-        _count: true,
-      }),
+      prisma.member.count({ where: { organizationId } }),
       prisma.contribution.findMany({
         where: { organizationId, type: "MONTHLY", paidForMonth: { gte: start, lte: end } },
         select: { paidForMonth: true, amount: true },
@@ -147,9 +141,6 @@ export async function buildAnnualReport(organizationId: string, year: number) {
     return { monthKey: key, count: bucket.count, total: bucket.total };
   });
 
-  const countFor = (status: string) =>
-    memberCounts.find((m) => m.status === status)?._count ?? 0;
-
   return {
     organization,
     year,
@@ -158,8 +149,7 @@ export async function buildAnnualReport(organizationId: string, year: number) {
     closingBalance: opening.balance + movement.totalIn,
     contributionCount: contributionAgg._count,
     contributionTotal: contributionAgg._sum.amount?.toNumber() ?? 0,
-    activeMembers: countFor("ACTIVE"),
-    inactiveMembers: countFor("INACTIVE"),
+    totalMembers: memberCount,
     months,
     generatedAt: new Date(),
   };

@@ -44,12 +44,8 @@ export function AnnualReportDocument({ report }: { report: AnnualReport }) {
         <Text style={styles.sectionTitle}>Membership</Text>
         <View>
           <View style={styles.summaryRow}>
-            <Text>Active members</Text>
-            <Text>{report.activeMembers}</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text>Inactive members</Text>
-            <Text>{report.inactiveMembers}</Text>
+            <Text>Total members</Text>
+            <Text>{report.totalMembers}</Text>
           </View>
           <View style={styles.summaryRow}>
             <Text>Contributions recorded during the year</Text>

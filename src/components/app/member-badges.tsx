@@ -1,13 +1,4 @@
 import { Badge } from "@/components/ui/badge";
-import type { MemberStatus } from "@/generated/prisma/enums";
-
-export function MemberStatusBadge({ status }: { status: MemberStatus }) {
-  return (
-    <Badge variant={status === "ACTIVE" ? "secondary" : "outline"}>
-      {status === "ACTIVE" ? "Active" : "Inactive"}
-    </Badge>
-  );
-}
 
 /**
  * Four states, not two: a month that has not started yet is "not due yet", a

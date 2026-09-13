@@ -13,7 +13,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PageHeader, EmptyState } from "@/components/app/page-header";
-import { MemberStatusBadge } from "@/components/app/member-badges";
 import { StatCard } from "@/components/app/stat-card";
 import { MonthGrid, MonthGridLegend } from "@/components/app/month-grid";
 import { requireOrgReader } from "@/lib/session";
@@ -24,7 +23,7 @@ import { CoversLabel } from "@/components/app/covers-label";
 import { findMemberWithContributions } from "@/server/members";
 import { getYearObligation } from "@/server/contributions";
 import { getMemberProgress, getSocietySettings } from "@/server/progress";
-import { MemberStatusToggle } from "./member-actions";
+import { DeleteMemberDialog } from "./member-actions";
 import { LumpSumDialog, type YearObligationView } from "./lump-sum-dialog";
 
 export const metadata: Metadata = { title: "Member" };
@@ -96,7 +95,7 @@ export default async function MemberDetailPage({ params }: PageProps<"/members/[
                     Edit
                   </Link>
                 </Button>
-                <MemberStatusToggle memberId={member.id} status={member.status} />
+                <DeleteMemberDialog memberId={member.id} memberName={member.name} />
               </>
             ) : null}
           </>
@@ -172,12 +171,6 @@ export default async function MemberDetailPage({ params }: PageProps<"/members/[
               <div className="flex justify-between gap-2">
                 <dt className="text-muted-foreground">Nominee phone</dt>
                 <dd className="truncate">{member.nomineePhone ?? "—"}</dd>
-              </div>
-              <div className="flex items-center justify-between gap-2">
-                <dt className="text-muted-foreground">Status</dt>
-                <dd>
-                  <MemberStatusBadge status={member.status} />
-                </dd>
               </div>
             </dl>
           </CardContent>

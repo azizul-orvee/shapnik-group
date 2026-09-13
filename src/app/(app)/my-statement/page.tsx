@@ -169,7 +169,7 @@ export default async function MyStatementPage({ searchParams }: PageProps<"/my-s
         <StatCard
           label="Member since"
           value={formatDate(progress.joinDate)}
-          hint={`${progress.memberCode} · ${statement.member.status === "ACTIVE" ? "Active" : "Inactive"}`}
+          hint={progress.memberCode}
         />
       </div>
 

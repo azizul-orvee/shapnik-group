@@ -12,26 +12,19 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PageHeader, EmptyState } from "@/components/app/page-header";
-import { MemberStatusBadge } from "@/components/app/member-badges";
 import { requireOrgReader } from "@/lib/session";
 import { canWrite } from "@/lib/rbac";
 import { formatDate } from "@/lib/dates";
 import { listMembers } from "@/server/members";
-import type { MemberStatus } from "@/generated/prisma/enums";
 
 export const metadata: Metadata = { title: "Members" };
 
 export default async function MembersPage({ searchParams }: PageProps<"/members">) {
   const session = await requireOrgReader();
   const params = await searchParams;
-
-  const rawStatus = typeof params.status === "string" ? params.status : undefined;
-  const status: MemberStatus | undefined =
-    rawStatus === "ACTIVE" || rawStatus === "INACTIVE" ? rawStatus : undefined;
   const search = typeof params.q === "string" ? params.q.trim() : "";
 
   const members = await listMembers(session.organizationId, {
-    status,
     search: search || undefined,
   });
   const writable = canWrite(session.role);
@@ -40,9 +33,7 @@ export default async function MembersPage({ searchParams }: PageProps<"/members"
     <>
       <PageHeader
         title="Members"
-        description={`${members.length} ${members.length === 1 ? "member" : "members"}${
-          status ? ` · ${status.toLowerCase()} only` : ""
-        }`}
+        description={`${members.length} ${members.length === 1 ? "member" : "members"}`}
         action={
           writable ? (
             <Button asChild size="sm">
@@ -66,34 +57,10 @@ export default async function MembersPage({ searchParams }: PageProps<"/members"
             aria-label="Search members"
           />
         </div>
-        {status ? <input type="hidden" name="status" value={status} /> : null}
         <Button type="submit" variant="secondary">
           Search
         </Button>
       </form>
-
-      <div className="mb-4 flex gap-2">
-        {[
-          { label: "All", value: undefined },
-          { label: "Active", value: "ACTIVE" },
-          { label: "Inactive", value: "INACTIVE" },
-        ].map((tab) => {
-          const href = new URLSearchParams();
-          if (search) href.set("q", search);
-          if (tab.value) href.set("status", tab.value);
-          const query = href.toString();
-          return (
-            <Button
-              key={tab.label}
-              asChild
-              size="sm"
-              variant={status === tab.value ? "default" : "outline"}
-            >
-              <Link href={query ? `/members?${query}` : "/members"}>{tab.label}</Link>
-            </Button>
-          );
-        })}
-      </div>
 
       {members.length === 0 ? (
         <EmptyState
@@ -120,7 +87,6 @@ export default async function MembersPage({ searchParams }: PageProps<"/members"
                 <TableHead>Name</TableHead>
                 <TableHead className="hidden sm:table-cell">Phone</TableHead>
                 <TableHead className="hidden md:table-cell">Joined</TableHead>
-                <TableHead className="text-right">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -141,9 +107,6 @@ export default async function MembersPage({ searchParams }: PageProps<"/members"
                   <TableCell className="hidden sm:table-cell">{member.phone ?? "—"}</TableCell>
                   <TableCell className="hidden md:table-cell">
                     {formatDate(member.joinDate)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <MemberStatusBadge status={member.status} />
                   </TableCell>
                 </TableRow>
               ))}

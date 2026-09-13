@@ -86,8 +86,7 @@ export default async function AnnualReportPage({ searchParams }: PageProps<"/rep
           <CardDescription>Roll as it stands today.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-3">
-          <StatCard label="Active members" value={String(report.activeMembers)} />
-          <StatCard label="Inactive members" value={String(report.inactiveMembers)} />
+          <StatCard label="Total members" value={String(report.totalMembers)} />
           <StatCard
             label="Payments recorded"
             value={String(report.contributionCount)}

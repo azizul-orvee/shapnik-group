@@ -6,7 +6,6 @@ import { monthKeyToDate, monthRange } from "@/lib/dates";
 import { ledgerDescription } from "@/server/contributions";
 import { getSocietySettings } from "@/server/progress";
 import { requireYearPlan } from "@/server/years";
-import type { MemberStatus } from "@/generated/prisma/enums";
 import type { MemberCreateInput } from "@/lib/validation";
 
 /**
@@ -26,7 +25,6 @@ function maskId(value: string): string {
 }
 
 export type MemberListFilter = {
-  status?: MemberStatus;
   search?: string;
 };
 
@@ -34,7 +32,6 @@ export async function listMembers(organizationId: string, filter: MemberListFilt
   return prisma.member.findMany({
     where: {
       organizationId,
-      ...(filter.status ? { status: filter.status } : {}),
       ...(filter.search
         ? {
             OR: [
@@ -45,7 +42,7 @@ export async function listMembers(organizationId: string, filter: MemberListFilt
           }
         : {}),
     },
-    orderBy: [{ status: "asc" }, { memberId: "asc" }],
+    orderBy: { memberId: "asc" },
   });
 }
 
@@ -104,17 +101,13 @@ export async function createMember(
     select: { memberLimit: true, startMonth: true },
   });
 
-  // The society is capped; deactivating a member frees their slot.
-  if ((input.status ?? "ACTIVE") === "ACTIVE") {
-    const active = await prisma.member.count({
-      where: { organizationId, status: "ACTIVE" },
-    });
-    if (active >= organization.memberLimit) {
-      throw new ApiError(
-        409,
-        `The society is limited to ${organization.memberLimit} active members. Deactivate someone before adding another.`,
-      );
-    }
+  // The society is capped; deleting a member frees their slot.
+  const memberCount = await prisma.member.count({ where: { organizationId } });
+  if (memberCount >= organization.memberLimit) {
+    throw new ApiError(
+      409,
+      `The society is limited to ${organization.memberLimit} members. Delete someone before adding another.`,
+    );
   }
 
   const passwordHash = await bcrypt.hash(input.nationalId, 10);
@@ -142,7 +135,6 @@ export async function createMember(
         nomineeNationalId: input.nomineeNationalId,
         nomineePhone: input.nomineePhone ?? null,
         joinDate: organization.startMonth,
-        status: input.status ?? "ACTIVE",
       },
     });
 
@@ -256,7 +248,6 @@ export async function updateMember(
           ? { nomineeNationalId: input.nomineeNationalId }
           : {}),
         ...("nomineePhone" in input ? { nomineePhone: input.nomineePhone ?? null } : {}),
-        ...(input.status !== undefined ? { status: input.status } : {}),
       },
     });
 
@@ -274,16 +265,36 @@ export async function updateMember(
 }
 
 /**
- * Members are never hard-deleted — their contribution history is part of the
- * society's books. Deactivating drops them out of dues tracking instead.
+ * Permanently deletes a member — their login, contributions and the linked
+ * cash-book rows all cascade away. Irreversible, so it re-checks the acting
+ * admin's own password first. The login is removed explicitly because the
+ * User→Member relation is `SetNull`, which would otherwise leave an orphan
+ * login that can still sign in.
  */
-export async function setMemberStatus(
+export async function deleteMember(
   organizationId: string,
+  actingUserId: string,
+  adminPassword: string,
   id: string,
-  status: MemberStatus,
 ) {
   await getMember(organizationId, id);
-  return prisma.member.update({ where: { id }, data: { status } });
+
+  const admin = await prisma.user.findFirst({
+    where: { id: actingUserId, organizationId },
+    select: { adminPasswordHash: true },
+  });
+  if (!admin?.adminPasswordHash || !(await bcrypt.compare(adminPassword, admin.adminPasswordHash))) {
+    throw new ApiError(403, "That password is incorrect");
+  }
+
+  await prisma.$transaction(async (tx) => {
+    // Delete the login first: the relation is SetNull, so removing the member
+    // first would clear memberId and leave the login behind.
+    await tx.user.deleteMany({ where: { organizationId, memberId: id } });
+    // Deleting the member cascades its contributions, and each contribution
+    // cascades its linked FundTransaction.
+    await tx.member.delete({ where: { id } });
+  });
 }
 
 /** Next free sequential member code, e.g. `M-031`. */

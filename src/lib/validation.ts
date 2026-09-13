@@ -56,7 +56,10 @@ export const memberCreateSchema = z.object({
     .trim()
     .min(1, "Member ID is required")
     .max(24)
-    .regex(/^[A-Za-z0-9-]+$/, "Letters, numbers and hyphens only"),
+    .regex(/^[A-Za-z0-9-]+$/, "Letters, numbers and hyphens only")
+    // Uppercased so an ID is unique regardless of case — "m-1" and "M-1" are
+    // the same member, and the DB's unique index is on this stored value.
+    .transform((v) => v.toUpperCase()),
   phone: phoneNumber,
   nationalId,
   nomineeName: z.string().trim().min(2, "Nominee name is required").max(120),
@@ -70,10 +73,16 @@ export const memberCreateSchema = z.object({
     .refine((v) => v === undefined || /^01\d{9}$/.test(v), {
       message: "Enter an 11-digit number starting 01",
     }),
-  status: z.enum(["ACTIVE", "INACTIVE"]).default("ACTIVE"),
 });
 
 export const memberUpdateSchema = memberCreateSchema.partial();
+
+/** Deleting a member is destructive and irreversible, so it re-checks the
+ *  admin's own password as confirmation. */
+export const memberDeleteSchema = z.object({
+  adminPassword: z.string().min(1, "Enter your password"),
+});
+export type MemberDeleteInput = z.output<typeof memberDeleteSchema>;
 
 const note = z
   .string()

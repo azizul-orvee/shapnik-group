@@ -6,13 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Field } from "@/components/app/field";
 import {
   memberCreateSchema,
@@ -39,9 +32,7 @@ export function MemberForm({ memberId, defaultValues }: Props) {
   const {
     register,
     handleSubmit,
-    setValue,
     setError,
-    watch,
     formState: { errors, isSubmitting },
   } = form;
 
@@ -152,28 +143,6 @@ export function MemberForm({ memberId, defaultValues }: Props) {
           />
         </Field>
       </fieldset>
-
-      <Field
-        id="status"
-        label="Status"
-        error={errors.status?.message}
-        hint="Inactive members are left out of dues tracking but keep their history."
-      >
-        <Select
-          value={watch("status") ?? "ACTIVE"}
-          onValueChange={(value) =>
-            setValue("status", value as MemberFormInput["status"], { shouldDirty: true })
-          }
-        >
-          <SelectTrigger id="status" className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ACTIVE">Active</SelectItem>
-            <SelectItem value="INACTIVE">Inactive</SelectItem>
-          </SelectContent>
-        </Select>
-      </Field>
 
       {isEdit ? null : (
         <p className="text-muted-foreground rounded-md border border-dashed p-3 text-xs">

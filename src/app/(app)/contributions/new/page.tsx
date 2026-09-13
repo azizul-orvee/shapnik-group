@@ -16,7 +16,7 @@ export default async function NewContributionPage({
   const preselected = typeof params.memberId === "string" ? params.memberId : "";
 
   const [members, settings, plans] = await Promise.all([
-    listMembers(session.organizationId, { status: "ACTIVE" }),
+    listMembers(session.organizationId),
     getSocietySettings(session.organizationId),
     listYearPlans(session.organizationId),
   ]);
