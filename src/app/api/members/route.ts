@@ -27,6 +27,6 @@ export const GET = handler(async (request: Request) => {
 export const POST = handler(async (request: Request) => {
   const session = await requireApiWriter();
   const input = await parseBody(request, memberCreateSchema);
-  const member = await createMember(session.organizationId, input);
+  const member = await createMember(session.organizationId, session.userId, input);
   return NextResponse.json({ member }, { status: 201 });
 });

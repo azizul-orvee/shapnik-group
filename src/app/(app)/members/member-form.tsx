@@ -56,8 +56,8 @@ export function MemberForm({ memberId, defaultValues }: Props) {
           method: "POST",
           body: values,
         });
-        toast.success("Member added");
-        router.push(`/members/${member.id}`);
+        toast.success("Member added — now record what they've paid");
+        router.push(`/members/${member.id}/setup`);
       }
       router.refresh();
     } catch (error) {

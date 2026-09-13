@@ -148,3 +148,100 @@ export function outstandingForYear(
       shortfalls,
   );
 }
+
+/* ── Initial setup: ticked months + an extra lump sum ───────────────────────
+ *
+ * A separate flow from planLumpSum, used the first time an admin records what a
+ * new member has already paid for a year. The admin ticks the whole months (and
+ * optionally the fee) that are settled, and may add an extra lump sum on top.
+ *
+ * Ticked items are recorded at the full rate. The lump sum is then spread over
+ * the *remaining* unticked months oldest-first, and only once every month is
+ * covered does anything left over go toward the fee — "oldest months first, then
+ * fee". Pure and client-safe, like planLumpSum, so the form preview and the rows
+ * the server writes come from this same call.
+ */
+export type InitialSetupPart =
+  | { kind: "ONE_TIME"; amount: number; full: boolean; source: "tick" | "box" }
+  | { kind: "MONTHLY"; monthKey: string; amount: number; full: boolean; source: "tick" | "box" };
+
+export type InitialSetupPlanInput = {
+  monthlyAmount: number;
+  oneTimeFee: number;
+  /** Already paid toward this year's fee (0 for a brand-new member). */
+  oneTimePaid: number;
+  /** In-season months with no payment yet, oldest first. */
+  unpaidMonths: string[];
+  /** Months the admin ticked as already paid in full. */
+  tickedMonths: string[];
+  /** The one-time fee ticked as already paid in full. */
+  feeTicked: boolean;
+  /** Extra money to spread over the remaining unticked months, then the fee. */
+  boxAmount: number;
+  /** Let the box remainder part-pay a month / the fee rather than be left over. */
+  allowPartial: boolean;
+};
+
+export type InitialSetupPlan = {
+  parts: InitialSetupPart[];
+  /** Sum of `parts` — what will actually be recorded. */
+  allocated: number;
+  /** Box money that could not be placed (the year is already fully covered). */
+  leftover: number;
+  /** A month the box left short of the rate, if any. */
+  shortMonth: string | null;
+  /** True when the box only part-paid the fee. */
+  feeShort: boolean;
+};
+
+export function planInitialSetup(input: InitialSetupPlanInput): InitialSetupPlan {
+  const parts: InitialSetupPart[] = [];
+  const owed = new Set(input.unpaidMonths);
+  const ticked = new Set(input.tickedMonths.filter((monthKey) => owed.has(monthKey)));
+  const feeDue = round2(Math.max(0, input.oneTimeFee - input.oneTimePaid));
+
+  // 1. Ticked whole months — full rate each, in season order.
+  for (const monthKey of input.unpaidMonths) {
+    if (ticked.has(monthKey)) {
+      parts.push({ kind: "MONTHLY", monthKey, amount: input.monthlyAmount, full: true, source: "tick" });
+    }
+  }
+
+  // 2. Ticked fee — the whole outstanding fee.
+  const feeTickedApplied = input.feeTicked && feeDue > 0;
+  if (feeTickedApplied) {
+    parts.push({ kind: "ONE_TIME", amount: feeDue, full: true, source: "tick" });
+  }
+
+  // 3. Extra lump sum — remaining unticked months, oldest first…
+  let rest = round2(Math.max(0, input.boxAmount));
+  let shortMonth: string | null = null;
+  for (const monthKey of input.unpaidMonths) {
+    if (rest <= 0) break;
+    if (ticked.has(monthKey)) continue;
+    if (rest >= input.monthlyAmount) {
+      parts.push({ kind: "MONTHLY", monthKey, amount: input.monthlyAmount, full: true, source: "box" });
+      rest = round2(rest - input.monthlyAmount);
+      continue;
+    }
+    if (!input.allowPartial) break;
+    parts.push({ kind: "MONTHLY", monthKey, amount: rest, full: false, source: "box" });
+    shortMonth = monthKey;
+    rest = 0;
+    break;
+  }
+
+  // 4. …then the fee, once every month is covered and if it was not ticked.
+  let feeShort = false;
+  if (rest > 0 && !feeTickedApplied && feeDue > 0 && (input.allowPartial || rest >= feeDue)) {
+    const take = round2(Math.min(rest, feeDue));
+    if (take > 0) {
+      parts.push({ kind: "ONE_TIME", amount: take, full: take >= feeDue, source: "box" });
+      feeShort = take < feeDue;
+      rest = round2(rest - take);
+    }
+  }
+
+  const allocated = round2(parts.reduce((sum, part) => sum + part.amount, 0));
+  return { parts, allocated, leftover: rest, shortMonth, feeShort };
+}

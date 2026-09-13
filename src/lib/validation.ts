@@ -141,6 +141,33 @@ export const lumpSumSchema = z.object({
   note,
 });
 
+/**
+ * Recording what a member has already paid for a year in one step: the whole
+ * months (and the fee) ticked as settled, plus an optional extra lump sum that
+ * fills the remaining months oldest-first and then the fee. The client previews
+ * the split with `planInitialSetup()`; the server recomputes it the same way.
+ */
+export const initialSetupSchema = z
+  .object({
+    paidForYear: z.coerce.number().int().min(2000).max(2100),
+    tickedMonths: z.array(monthKey).default([]),
+    feeTicked: z.coerce.boolean().default(false),
+    boxAmount: z.coerce
+      .number({ message: "Enter an amount" })
+      .min(0, "Amount cannot be negative")
+      .max(99_999_999, "Amount is too large")
+      .default(0),
+    paidOnDate: isoDate,
+    note,
+  })
+  .refine((v) => v.tickedMonths.length > 0 || v.feeTicked || v.boxAmount > 0, {
+    message: "Tick at least one month or the fee, or enter an amount",
+    path: ["boxAmount"],
+  });
+
+export type InitialSetupFormInput = z.input<typeof initialSetupSchema>;
+export type InitialSetupInput = z.output<typeof initialSetupSchema>;
+
 export const transactionCreateSchema = z.object({
   type: z.enum(["IN", "OUT"]),
   amount,

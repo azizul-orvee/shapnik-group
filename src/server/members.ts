@@ -2,6 +2,10 @@ import "server-only";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { ApiError, conflict, notFound } from "@/lib/api";
+import { monthKeyToDate, monthRange } from "@/lib/dates";
+import { ledgerDescription } from "@/server/contributions";
+import { getSocietySettings } from "@/server/progress";
+import { requireYearPlan } from "@/server/years";
 import type { MemberStatus } from "@/generated/prisma/enums";
 import type { MemberCreateInput } from "@/lib/validation";
 
@@ -81,7 +85,11 @@ export async function getMemberWithContributions(organizationId: string, id: str
  * password. Both come straight from what the admin typed, so a member can sign
  * in the moment their account exists.
  */
-export async function createMember(organizationId: string, input: MemberCreateInput) {
+export async function createMember(
+  organizationId: string,
+  recordedById: string,
+  input: MemberCreateInput,
+) {
   const existing = await prisma.member.findUnique({
     where: { organizationId_memberId: { organizationId, memberId: input.memberId } },
     select: { id: true },
@@ -111,6 +119,17 @@ export async function createMember(organizationId: string, input: MemberCreateIn
 
   const passwordHash = await bcrypt.hash(input.nationalId, 10);
 
+  // Every fully-elapsed past year is treated as paid in full for a founding
+  // member — each in-season month at that year's rate, plus the year's fee.
+  // The current (active) year is left for the admin to record in the setup
+  // window shown right after creation.
+  const settings = await getSocietySettings(organizationId);
+  const activeYear = Number(settings.activeMonthKey.slice(0, 4));
+  const pastYears = settings.years.filter((year) => year < activeYear);
+  const pastPlans = await Promise.all(
+    pastYears.map((year) => requireYearPlan(organizationId, year)),
+  );
+
   return prisma.$transaction(async (tx) => {
     const member = await tx.member.create({
       data: {
@@ -138,6 +157,63 @@ export async function createMember(organizationId: string, input: MemberCreateIn
         memberId: member.id,
       },
     });
+
+    // Settle each past year: a monthly row per in-season month, plus the fee.
+    // Each contribution carries its matching cash-book IN row in this same
+    // transaction, so the ledger never drifts from the contribution list.
+    for (const plan of pastPlans) {
+      for (const monthKey of monthRange(plan.startMonthKey, plan.endMonthKey)) {
+        const paidOnDate = monthKeyToDate(monthKey);
+        const contribution = await tx.contribution.create({
+          data: {
+            organizationId,
+            memberId: member.id,
+            type: "MONTHLY",
+            amount: plan.monthlyAmount,
+            paidForYear: plan.year,
+            paidForMonth: paidOnDate,
+            paidOnDate,
+            recordedById,
+          },
+        });
+        await tx.fundTransaction.create({
+          data: {
+            organizationId,
+            type: "IN",
+            amount: plan.monthlyAmount,
+            description: ledgerDescription(member.name, member.memberId, monthKey, plan.year),
+            date: paidOnDate,
+            contributionId: contribution.id,
+            recordedById,
+          },
+        });
+      }
+
+      const feeDate = monthKeyToDate(plan.startMonthKey);
+      const fee = await tx.contribution.create({
+        data: {
+          organizationId,
+          memberId: member.id,
+          type: "ONE_TIME",
+          amount: plan.oneTimeFee,
+          paidForYear: plan.year,
+          paidForMonth: null,
+          paidOnDate: feeDate,
+          recordedById,
+        },
+      });
+      await tx.fundTransaction.create({
+        data: {
+          organizationId,
+          type: "IN",
+          amount: plan.oneTimeFee,
+          description: ledgerDescription(member.name, member.memberId, undefined, plan.year),
+          date: feeDate,
+          contributionId: fee.id,
+          recordedById,
+        },
+      });
+    }
 
     return member;
   });

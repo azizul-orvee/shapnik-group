@@ -2,16 +2,22 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { badRequest, conflict, notFound } from "@/lib/api";
 import { dateToMonthKey, monthKeyToDate, monthRange, yearBounds } from "@/lib/dates";
-import { outstandingForYear, planLumpSum, type ShortMonth } from "@/lib/allocate";
+import {
+  outstandingForYear,
+  planInitialSetup,
+  planLumpSum,
+  type ShortMonth,
+} from "@/lib/allocate";
 import { assertMonthCovered, planForMonthKey, listYearPlans, requireYearPlan } from "@/server/years";
 import type {
   BulkContributionInput,
   ContributionCreateInput,
   ContributionUpdateInput,
+  InitialSetupInput,
   LumpSumInput,
 } from "@/lib/validation";
 
-function ledgerDescription(
+export function ledgerDescription(
   memberName: string,
   memberCode: string,
   monthKey?: string,
@@ -371,6 +377,87 @@ export async function recordLumpSum(
     leftover: split.leftover,
     shortMonth: split.shortMonth,
     clearsYear: split.clearsYear,
+  };
+}
+
+/**
+ * Records what a member has already paid for a year in one go — the ticked whole
+ * months and fee at full rate, plus an extra lump sum spread over the remaining
+ * months (oldest first) and then the fee. The split comes from the same
+ * `planInitialSetup()` the admin saw in the preview, and every row plus its
+ * cash-book entry is written in a single transaction. Used by the setup window
+ * shown right after a member is created.
+ */
+export async function recordInitialSetup(
+  organizationId: string,
+  recordedById: string,
+  memberId: string,
+  input: InitialSetupInput,
+) {
+  const member = await prisma.member.findFirst({
+    where: { id: memberId, organizationId },
+    select: { id: true, name: true, memberId: true },
+  });
+  if (!member) throw notFound("Member not found");
+
+  const obligation = await getYearObligation(organizationId, member.id, input.paidForYear);
+  const plan = planInitialSetup({
+    monthlyAmount: obligation.monthlyAmount,
+    oneTimeFee: obligation.oneTimeFee,
+    oneTimePaid: obligation.oneTimePaid,
+    unpaidMonths: obligation.unpaidMonths,
+    tickedMonths: input.tickedMonths,
+    feeTicked: input.feeTicked,
+    boxAmount: input.boxAmount,
+    allowPartial: true,
+  });
+
+  if (plan.parts.length === 0) {
+    throw badRequest(
+      obligation.outstanding === 0
+        ? `${member.name} has nothing outstanding for ${input.paidForYear}`
+        : "Tick at least one month or the fee, or enter an amount",
+    );
+  }
+
+  const paidOnDate = new Date(`${input.paidOnDate}T00:00:00.000Z`);
+
+  await prisma.$transaction(async (tx) => {
+    for (const part of plan.parts) {
+      const monthKey = part.kind === "MONTHLY" ? part.monthKey : undefined;
+      const contribution = await tx.contribution.create({
+        data: {
+          organizationId,
+          memberId: member.id,
+          type: part.kind,
+          amount: part.amount,
+          paidForYear: input.paidForYear,
+          paidForMonth: monthKey ? monthKeyToDate(monthKey) : null,
+          paidOnDate,
+          note: input.note ?? null,
+          recordedById,
+        },
+      });
+      await tx.fundTransaction.create({
+        data: {
+          organizationId,
+          type: "IN",
+          amount: part.amount,
+          description: ledgerDescription(member.name, member.memberId, monthKey, input.paidForYear),
+          date: paidOnDate,
+          contributionId: contribution.id,
+          recordedById,
+        },
+      });
+    }
+  });
+
+  return {
+    created: plan.parts.length,
+    allocated: plan.allocated,
+    leftover: plan.leftover,
+    shortMonth: plan.shortMonth,
+    feeShort: plan.feeShort,
   };
 }
 
