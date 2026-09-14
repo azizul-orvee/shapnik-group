@@ -267,8 +267,11 @@ kept in sync with YearPlan rows.
 seed or migrate a placeholder 2027 row.
 
 **Member** — `memberId` is the passbook code, unique per org, and doubles as the
-member's sign-in username, stored **uppercased** so an ID is unique regardless of
-case. Members are **permanently deleted** — `DELETE /api/members/[id]` removes the
+member's sign-in username, stored **uppercased**. IDs that differ only by an
+`M`/`M-` prefix or leading zeros are the same ID (`memberIdKey()` in
+`src/lib/member-id.ts`), so `M-01` and `01` cannot both exist. The DB index only
+catches exact repeats, so `createMember()` / `updateMember()` do the check.
+Members are **permanently deleted** — `DELETE /api/members/[id]` removes the
 member, their login, contributions and linked cash-book rows in one
 `$transaction`, after re-checking the admin's password. There is **no
 active/inactive state**; `Member.status` remains in the schema, dormant at
@@ -497,6 +500,12 @@ wrong produces a wall of resolver type errors.
     cash-book rows, with a raised `{ timeout }`. `recordInitialSetup` uses the
     same shape. **Keep bulk DB work batched** — a per-row loop over a remote
     database does not scale to a transaction.
+
+13. **`M-01` and `01` were both created.** The duplicate check compared raw
+    strings, so an ID typed without its `M-` prefix went through as a new
+    member. Clashes are now compared by `memberIdKey()`, which ignores case,
+    the prefix and leading zeros. The database index is still on the exact
+    text, so the check has to stay in `src/server/members.ts`.
 
 ### Verification gotchas
 

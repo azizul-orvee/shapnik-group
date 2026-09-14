@@ -129,8 +129,12 @@ do not reintroduce them.
 An admin registers a member with **name, member ID, phone, NID, nominee name and
 nominee NID**; nominee phone is the only optional field. There is **no join-date
 field** — every member joins at the society's opening month
-(`Organization.startMonth`). Member IDs are stored **uppercased**, so an ID is
-unique regardless of case. `createMember()` creates their login in the same
+(`Organization.startMonth`). Member IDs are stored **uppercased**, and IDs that
+differ only by an `M`/`M-` prefix or leading zeros are the **same ID** — `M-01`,
+`M01`, `01` and `1` cannot coexist. Check clashes with `memberIdKey()` from
+`src/lib/member-id.ts`, never by comparing strings; the database index only
+catches exact repeats. Sign-in still matches the ID exactly as stored.
+`createMember()` creates their login in the same
 transaction and, in that same transaction, **auto-settles every fully-elapsed
 past year** (2025) as paid in full — each in-season month plus the year's fee,
 each with its cash-book row. New members are then sent to a **payment setup

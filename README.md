@@ -183,7 +183,8 @@ The admin registers each member with their name, member ID, phone, NID, nominee
 name and nominee NID (nominee phone optional). Their login is created
 automatically. Correcting a member's NID or ID also moves their login, so the
 details on screen are always the ones that work. Member IDs are stored
-uppercased, so an ID is unique regardless of case.
+uppercased, and `M-01`, `M01`, `01` and `1` count as the same ID, so only one of
+them can exist.
 
 There is no join-date field — every member joins at the society's opening month.
 On creation, all fully-elapsed past years (2025) are recorded as paid in full,

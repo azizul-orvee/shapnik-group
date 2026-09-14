@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { ApiError, conflict, notFound } from "@/lib/api";
 import { dateToMonthKey, monthKeyToDate, monthRange } from "@/lib/dates";
+import { memberIdKey } from "@/lib/member-id";
 import { ledgerDescription } from "@/server/contributions";
 import { getSocietySettings } from "@/server/progress";
 import { requireYearPlan } from "@/server/years";
@@ -77,6 +78,26 @@ export async function getMemberWithContributions(organizationId: string, id: str
 }
 
 /**
+ * "M-01", "01" and "1" are one member ID, but the database's unique index only
+ * sees the exact text. Compare every other member's ID by its key so a
+ * differently written copy of an ID already in use is refused.
+ */
+async function assertMemberIdAvailable(organizationId: string, memberId: string, exceptId?: string) {
+  const key = memberIdKey(memberId);
+  const others = await prisma.member.findMany({
+    where: { organizationId, ...(exceptId ? { id: { not: exceptId } } : {}) },
+    select: { memberId: true },
+  });
+  const clash = others.find((other) => memberIdKey(other.memberId) === key);
+  if (!clash) return;
+  throw conflict(
+    clash.memberId === memberId
+      ? `Member ID "${memberId}" is already in use`
+      : `Member ID "${memberId}" is the same as "${clash.memberId}", which is already in use`,
+  );
+}
+
+/**
  * Registers a member and, in the same transaction, the login they use to see
  * their own record: their member ID is the username and their NID the initial
  * password. Both come straight from what the admin typed, so a member can sign
@@ -87,11 +108,7 @@ export async function createMember(
   recordedById: string,
   input: MemberCreateInput,
 ) {
-  const existing = await prisma.member.findUnique({
-    where: { organizationId_memberId: { organizationId, memberId: input.memberId } },
-    select: { id: true },
-  });
-  if (existing) throw conflict(`Member ID "${input.memberId}" is already in use`);
+  await assertMemberIdAvailable(organizationId, input.memberId);
 
   // Members are entered as founding members: they owe from the society's
   // opening month, so their join date is the organisation's start month rather
@@ -225,14 +242,9 @@ export async function updateMember(
 ) {
   const current = await getMember(organizationId, id);
 
-  if (input.memberId) {
-    const clash = await prisma.member.findUnique({
-      where: { organizationId_memberId: { organizationId, memberId: input.memberId } },
-      select: { id: true },
-    });
-    if (clash && clash.id !== id) {
-      throw conflict(`Member ID "${input.memberId}" is already in use`);
-    }
+  // Only a changed ID is checked, so editing a member's name or phone still saves.
+  if (input.memberId !== undefined && input.memberId !== current.memberId) {
+    await assertMemberIdAvailable(organizationId, input.memberId, id);
   }
 
   // The member's ID and NID are their sign-in credentials, so correcting either
