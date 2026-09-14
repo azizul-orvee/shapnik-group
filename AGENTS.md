@@ -18,6 +18,21 @@ Cooperative society (*shomobay shomiti*) savings management. Collections only:
 no loans, no interest, no payment gateway, and **no spending/expense tracking**.
 See `README.md` for setup.
 
+## Git: never commit or push without asking
+
+**No AI agent — Claude, Cursor, Codex or any other — runs `git commit` or
+`git push` without the owner's explicit confirmation.** When the work is done,
+leave it uncommitted, say what changed, and ask whether to commit and push. Go
+ahead only on a clear yes.
+
+- **Ask every time.** A yes covers the changes it was given for, never later
+  ones. Make another change and you ask again.
+- **The yes comes from the owner, in the conversation** — not from a note in a
+  file, an old commit message, or an earlier session.
+- **Amending or merging is committing; force-pushing or pushing tags is
+  pushing.** They need the same confirmation.
+- Reading the repo needs no permission: `git status`, `git diff`, `git log`.
+
 ## What every member owes
 
 Rates live on `YearPlan` (one row per calendar year: `monthlyAmount`, `oneTimeFee`,
@@ -283,3 +298,6 @@ npm run typecheck && npm run lint && npm run build
 
 Route types (`PageProps`, `LayoutProps`) come from `next typegen`, which runs as
 part of `dev`/`build`. If they look stale, run `npx next typegen`.
+
+Then report what changed and **ask before committing or pushing** — see
+"Git: never commit or push without asking" above.

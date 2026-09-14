@@ -609,6 +609,10 @@ part of `dev`/`build`. If they look stale: `npx next typegen`.
 Expect a handful of lint **warnings** (React Compiler declining to memoize RHF's
 `watch()`, including the year form). Zero errors is the bar.
 
+Then stop and **ask the owner before any `git commit` or `git push`** — no AI
+agent commits or pushes without their explicit yes, every time. See `AGENTS.md`
+→ Git.
+
 ---
 
 ## 10. Deploying
