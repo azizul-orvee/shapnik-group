@@ -26,10 +26,11 @@ const NID_MESSAGE = "NID must be 10–17 digits";
 
 const nationalId = z.string().trim().regex(NID_PATTERN, NID_MESSAGE);
 
-const phoneNumber = z
-  .string()
-  .trim()
-  .regex(/^01\d{9}$/, "Enter an 11-digit number starting 01");
+/** Any number of at least 10 digits — it need not start with 01. */
+const PHONE_PATTERN = /^\d{10,}$/;
+const PHONE_MESSAGE = "Phone must be at least 10 digits";
+
+const phoneNumber = z.string().trim().regex(PHONE_PATTERN, PHONE_MESSAGE);
 
 const optionalNationalId = z
   .string()
@@ -45,9 +46,7 @@ const optionalPhone = z
   .optional()
   .or(z.literal(""))
   .transform((v) => (v ? v : undefined))
-  .refine((v) => v === undefined || /^01\d{9}$/.test(v), {
-    message: "Enter an 11-digit number starting 01",
-  });
+  .refine((v) => v === undefined || PHONE_PATTERN.test(v), { message: PHONE_MESSAGE });
 
 export const memberCreateSchema = z.object({
   name: z.string().trim().min(2, "Name is required").max(120),
@@ -64,15 +63,7 @@ export const memberCreateSchema = z.object({
   nationalId,
   nomineeName: z.string().trim().min(2, "Nominee name is required").max(120),
   nomineeNationalId: nationalId,
-  nomineePhone: z
-    .string()
-    .trim()
-    .optional()
-    .or(z.literal(""))
-    .transform((v) => (v ? v : undefined))
-    .refine((v) => v === undefined || /^01\d{9}$/.test(v), {
-      message: "Enter an 11-digit number starting 01",
-    }),
+  nomineePhone: optionalPhone,
 });
 
 export const memberUpdateSchema = memberCreateSchema.partial();

@@ -76,7 +76,12 @@ export function MemberForm({ memberId, defaultValues }: Props) {
         <Input id="memberId" autoCapitalize="characters" {...register("memberId")} />
       </Field>
 
-      <Field id="phone" label="Phone" error={errors.phone?.message} hint="11 digits, e.g. 01712345678.">
+      <Field
+        id="phone"
+        label="Phone"
+        error={errors.phone?.message}
+        hint="At least 10 digits, e.g. 01712345678."
+      >
         <Input
           id="phone"
           type="tel"

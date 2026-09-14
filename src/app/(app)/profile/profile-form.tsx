@@ -64,7 +64,12 @@ export function ProfileForm({
         <Input id="name" autoComplete="name" {...register("name")} />
       </Field>
 
-      <Field id="phone" label="Phone" error={errors.phone?.message} hint="11 digits, e.g. 01712345678.">
+      <Field
+        id="phone"
+        label="Phone"
+        error={errors.phone?.message}
+        hint="At least 10 digits, e.g. 01712345678."
+      >
         <Input
           id="phone"
           type="tel"
