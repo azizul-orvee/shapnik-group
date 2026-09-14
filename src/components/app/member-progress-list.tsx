@@ -59,7 +59,7 @@ export function MemberProgressList({
                     {row.monthsPaid}/{row.monthCount} months
                   </span>
                   {showPhone && row.phone ? (
-                    <a href={`tel:${row.phone}`} className="flex items-center gap-1 hover:underline">
+                    <a href={`tel:${row.phone.replace(/\s/g, "")}`} className="flex items-center gap-1 hover:underline">
                       <Phone className="size-3" />
                       {row.phone}
                     </a>

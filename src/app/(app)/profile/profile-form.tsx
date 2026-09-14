@@ -68,12 +68,12 @@ export function ProfileForm({
         id="phone"
         label="Phone"
         error={errors.phone?.message}
-        hint="At least 10 digits, e.g. 01712345678."
+        hint="At least 10 digits. + and spaces are fine, e.g. +880 1712 345678."
       >
         <Input
           id="phone"
           type="tel"
-          inputMode="numeric"
+          inputMode="tel"
           autoComplete="tel"
           placeholder="01712345678"
           {...register("phone")}
@@ -125,7 +125,7 @@ export function ProfileForm({
           <Input
             id="nomineePhone"
             type="tel"
-            inputMode="numeric"
+            inputMode="tel"
             autoComplete="off"
             placeholder="01712345678"
             {...register("nomineePhone")}

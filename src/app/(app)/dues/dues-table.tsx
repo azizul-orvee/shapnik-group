@@ -175,7 +175,7 @@ export function DuesTable({
                     </Link>
                     {!row.paid && !isFuture && row.phone ? (
                       <a
-                        href={`tel:${row.phone}`}
+                        href={`tel:${row.phone.replace(/\s/g, "")}`}
                         className="text-muted-foreground mt-0.5 flex items-center gap-1 text-xs"
                       >
                         <Phone className="size-3" />

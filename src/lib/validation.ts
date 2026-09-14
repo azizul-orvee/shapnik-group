@@ -26,11 +26,20 @@ const NID_MESSAGE = "NID must be 10–17 digits";
 
 const nationalId = z.string().trim().regex(NID_PATTERN, NID_MESSAGE);
 
-/** Any number of at least 10 digits — it need not start with 01. */
-const PHONE_PATTERN = /^\d{10,}$/;
-const PHONE_MESSAGE = "Phone must be at least 10 digits";
+/**
+ * At least 10 digits, starting with any digit. A leading + and spaces are fine,
+ * e.g. "+880 1712 345678"; repeated spaces are collapsed to one.
+ */
+const PHONE_PATTERN = /^\+?\d[\d ]*$/;
+const PHONE_MESSAGE = "Phone must have at least 10 digits (+ and spaces are allowed)";
+const isPhone = (v: string) => PHONE_PATTERN.test(v) && v.replace(/\D/g, "").length >= 10;
+const tidyPhone = (v: string) => v.replace(/ {2,}/g, " ");
 
-const phoneNumber = z.string().trim().regex(PHONE_PATTERN, PHONE_MESSAGE);
+const phoneNumber = z
+  .string()
+  .trim()
+  .transform(tidyPhone)
+  .refine(isPhone, { message: PHONE_MESSAGE });
 
 const optionalNationalId = z
   .string()
@@ -45,8 +54,8 @@ const optionalPhone = z
   .trim()
   .optional()
   .or(z.literal(""))
-  .transform((v) => (v ? v : undefined))
-  .refine((v) => v === undefined || PHONE_PATTERN.test(v), { message: PHONE_MESSAGE });
+  .transform((v) => (v ? tidyPhone(v) : undefined))
+  .refine((v) => v === undefined || isPhone(v), { message: PHONE_MESSAGE });
 
 export const memberCreateSchema = z.object({
   name: z.string().trim().min(2, "Name is required").max(120),
