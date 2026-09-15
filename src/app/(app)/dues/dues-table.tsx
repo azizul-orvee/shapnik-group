@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/app/page-header";
 import { PaidBadge } from "@/components/app/member-badges";
+import { DesktopTable, MobileList } from "@/components/app/mobile-list";
 import { apiRequest } from "@/lib/http";
 import { formatTakaShort } from "@/lib/money";
 import { dhakaDateKey, formatDate, formatMonthKey } from "@/lib/dates";
@@ -73,7 +74,6 @@ export function DuesTable({
     );
   }, [rows, query]);
 
-  // One tap logs the month's standard rate, received today.
   async function markPaid(row: DuesTableRow) {
     setBusy(row.memberId);
     try {
@@ -117,6 +117,32 @@ export function DuesTable({
     }
   }
 
+  function statusControl(row: DuesTableRow) {
+    if (!row.paid && writable && expectedAmount > 0) {
+      return (
+        <Button
+          size="sm"
+          variant={isFuture ? "outline" : "default"}
+          onClick={() => void markPaid(row)}
+          disabled={busy !== null}
+          className="h-11 w-full tabular-nums md:h-7 md:w-auto"
+        >
+          {busy === row.memberId
+            ? "Saving…"
+            : `${isFuture ? "Pay ahead" : "Log"} ${formatTakaShort(expectedAmount)}`}
+        </Button>
+      );
+    }
+    return (
+      <PaidBadge
+        paid={row.paid}
+        isFuture={isFuture}
+        paidInAdvance={row.paidInAdvance}
+        short={row.short}
+      />
+    );
+  }
+
   return (
     <>
       <div className="relative mb-3">
@@ -128,7 +154,7 @@ export function DuesTable({
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search by name or ID…"
           aria-label="Search members"
-          className="pl-9"
+          className="h-11 pl-9 md:h-8"
         />
         {query ? (
           <button
@@ -148,81 +174,104 @@ export function DuesTable({
           description={query ? "Try a different name or member ID." : undefined}
         />
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-20">ID</TableHead>
-                <TableHead>Member</TableHead>
-                <TableHead className="hidden sm:table-cell">Paid on</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-                <TableHead className="text-right">Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((row) => (
-                <TableRow
-                  key={row.memberId}
-                  className={row.paid || isFuture ? undefined : "bg-destructive/5"}
-                >
-                  <TableCell className="font-mono text-xs">{row.memberCode}</TableCell>
-                  <TableCell>
+        <>
+          <MobileList>
+            {filtered.map((row) => (
+              <li
+                key={row.memberId}
+                className={row.paid || isFuture ? "px-4 py-3.5" : "bg-destructive/5 px-4 py-3.5"}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
                     <Link
                       href={`/members/${row.memberId}`}
                       className="font-medium underline-offset-4 hover:underline"
                     >
                       {row.name}
                     </Link>
+                    <p className="text-muted-foreground mt-0.5 font-mono text-xs">{row.memberCode}</p>
                     {!row.paid && !isFuture && row.phone ? (
                       <a
                         href={`tel:${row.phone.replace(/\s/g, "")}`}
-                        className="text-muted-foreground mt-0.5 flex items-center gap-1 text-xs"
+                        className="text-muted-foreground mt-1.5 inline-flex min-h-10 items-center gap-1.5 text-sm"
                       >
-                        <Phone className="size-3" />
+                        <Phone className="size-3.5" />
                         {row.phone}
                       </a>
                     ) : null}
                     {row.short ? (
-                      <span className="text-viz-warning mt-0.5 block text-xs">
+                      <span className="text-viz-warning mt-1 block text-xs">
                         {formatTakaShort(row.shortfall)} short of the rate
                       </span>
                     ) : null}
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    {row.paidOnDate ? formatDate(row.paidOnDate) : "—"}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {row.amount === null ? "—" : formatTakaShort(row.amount)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {!row.paid && writable && expectedAmount > 0 ? (
-                      // A future month is not overdue, so its button stays quiet —
-                      // it is an opportunity to pay ahead, not a chase.
-                      <Button
-                        size="sm"
-                        variant={isFuture ? "outline" : "default"}
-                        onClick={() => void markPaid(row)}
-                        disabled={busy !== null}
-                        className="tabular-nums"
-                      >
-                        {busy === row.memberId
-                          ? "Saving…"
-                          : `${isFuture ? "Pay ahead" : "Log"} ${formatTakaShort(expectedAmount)}`}
-                      </Button>
-                    ) : (
-                      <PaidBadge
-                        paid={row.paid}
-                        isFuture={isFuture}
-                        paidInAdvance={row.paidInAdvance}
-                        short={row.short}
-                      />
-                    )}
-                  </TableCell>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="font-heading text-base font-semibold tabular-nums">
+                      {row.amount === null ? "—" : formatTakaShort(row.amount)}
+                    </p>
+                    {row.paidOnDate ? (
+                      <p className="text-muted-foreground mt-0.5 text-[11px]">
+                        {formatDate(row.paidOnDate)}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+                <div className="mt-3">{statusControl(row)}</div>
+              </li>
+            ))}
+          </MobileList>
+
+          <DesktopTable>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-20">ID</TableHead>
+                  <TableHead>Member</TableHead>
+                  <TableHead>Paid on</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead className="text-right">Status</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((row) => (
+                  <TableRow
+                    key={row.memberId}
+                    className={row.paid || isFuture ? undefined : "bg-destructive/5"}
+                  >
+                    <TableCell className="font-mono text-xs">{row.memberCode}</TableCell>
+                    <TableCell>
+                      <Link
+                        href={`/members/${row.memberId}`}
+                        className="font-medium underline-offset-4 hover:underline"
+                      >
+                        {row.name}
+                      </Link>
+                      {!row.paid && !isFuture && row.phone ? (
+                        <a
+                          href={`tel:${row.phone.replace(/\s/g, "")}`}
+                          className="text-muted-foreground mt-0.5 flex items-center gap-1 text-xs"
+                        >
+                          <Phone className="size-3" />
+                          {row.phone}
+                        </a>
+                      ) : null}
+                      {row.short ? (
+                        <span className="text-viz-warning mt-0.5 block text-xs">
+                          {formatTakaShort(row.shortfall)} short of the rate
+                        </span>
+                      ) : null}
+                    </TableCell>
+                    <TableCell>{row.paidOnDate ? formatDate(row.paidOnDate) : "—"}</TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {row.amount === null ? "—" : formatTakaShort(row.amount)}
+                    </TableCell>
+                    <TableCell className="text-right">{statusControl(row)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </DesktopTable>
+        </>
       )}
     </>
   );

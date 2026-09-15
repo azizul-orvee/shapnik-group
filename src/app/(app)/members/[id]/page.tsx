@@ -13,6 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PageHeader, EmptyState } from "@/components/app/page-header";
+import { DesktopTable, MobileList } from "@/components/app/mobile-list";
 import { StatCard } from "@/components/app/stat-card";
 import { MonthGrid, MonthGridLegend } from "@/components/app/month-grid";
 import { requireOrgReader } from "@/lib/session";
@@ -102,7 +103,7 @@ export default async function MemberDetailPage({ params }: PageProps<"/members/[
         }
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-3">
         <StatCard
           label="Total contributed"
           value={formatTakaShort(total)}
@@ -213,43 +214,62 @@ export default async function MemberDetailPage({ params }: PageProps<"/members/[
               description="Payments recorded for this member will appear here."
             />
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>For month</TableHead>
-                    <TableHead className="hidden sm:table-cell">Paid on</TableHead>
-                    <TableHead className="hidden md:table-cell">Recorded by</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {member.contributions.map((contribution) => (
-                    <TableRow key={contribution.id}>
-                      <TableCell className="font-medium">
-                        <CoversLabel
-                          type={contribution.type}
-                          paidForMonth={contribution.paidForMonth}
-                          paidForYear={contribution.paidForYear}
-                        />
-                        <span className="text-muted-foreground block text-xs sm:hidden">
-                          Paid {formatDate(contribution.paidOnDate)}
-                        </span>
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">
+            <>
+              <MobileList className="ring-0">
+                {member.contributions.map((contribution) => (
+                  <li key={contribution.id} className="flex items-center justify-between gap-3 px-0 py-3">
+                    <div className="min-w-0">
+                      <CoversLabel
+                        type={contribution.type}
+                        paidForMonth={contribution.paidForMonth}
+                        paidForYear={contribution.paidForYear}
+                      />
+                      <span className="text-muted-foreground mt-0.5 block pl-4 text-xs">
                         {formatDate(contribution.paidOnDate)}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground hidden md:table-cell">
-                        {contribution.recordedBy?.name ?? "—"}
-                      </TableCell>
-                      <TableCell className="text-right font-medium tabular-nums">
-                        {formatTakaShort(contribution.amount)}
-                      </TableCell>
+                        {contribution.recordedBy?.name
+                          ? ` · ${contribution.recordedBy.name}`
+                          : ""}
+                      </span>
+                    </div>
+                    <span className="font-heading shrink-0 text-base font-semibold tabular-nums">
+                      {formatTakaShort(contribution.amount)}
+                    </span>
+                  </li>
+                ))}
+              </MobileList>
+              <DesktopTable className="border-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>For month</TableHead>
+                      <TableHead>Paid on</TableHead>
+                      <TableHead>Recorded by</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {member.contributions.map((contribution) => (
+                      <TableRow key={contribution.id}>
+                        <TableCell className="font-medium">
+                          <CoversLabel
+                            type={contribution.type}
+                            paidForMonth={contribution.paidForMonth}
+                            paidForYear={contribution.paidForYear}
+                          />
+                        </TableCell>
+                        <TableCell>{formatDate(contribution.paidOnDate)}</TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {contribution.recordedBy?.name ?? "—"}
+                        </TableCell>
+                        <TableCell className="text-right font-medium tabular-nums">
+                          {formatTakaShort(contribution.amount)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </DesktopTable>
+            </>
           )}
         </CardContent>
       </Card>

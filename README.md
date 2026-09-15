@@ -59,11 +59,14 @@ app is built to make that fast.
 
 ## Look and feel
 
-Mobile first — the treasurer works on a phone, with a floating bottom nav and a
-sidebar on larger screens. The interface runs on a **teal brand theme** (kept
-clear of the status colours, which stay on a colourblind-safe data palette) with
-**light and dark modes** — the header toggle remembers the choice. The society
-logo appears in the header, on the sign-in screen and as the browser favicon.
+Mobile first — the treasurer works on a phone, with a floating bottom nav (four
+primary destinations plus More) and a sidebar on larger screens. Members land on
+their statement with Home and Profile on the bar. Lists of people and payments
+are tappable cards on a phone, tables on a desktop. The interface runs on a
+**teal brand theme** (kept clear of the status colours, which stay on a
+colourblind-safe data palette) with **light and dark modes** — the header toggle
+(or the account menu on a phone) remembers the choice. The society logo appears
+in the header, on the sign-in screen and as the browser favicon.
 
 ## Stack
 
@@ -199,8 +202,9 @@ member is permanent** — it removes the member, their login and all their payme
 — so it asks the admin to re-enter their password first. There is no
 active/inactive state.
 
-Everyone can edit their own details at **`/profile`** — the admin fills theirs in
-whenever they like, and changing an NID there changes the password too.
+The admin fills in their own details at **`/profile`**, and changing an NID there
+changes the password too. A member's `/profile` is **read-only** — name, phone,
+NID and nominee come from the roll the admin keeps, and the NID stays masked.
 
 > **Note on NID-as-password.** It is convenient for handover but weak — an NID is
 > semi-public and never expires. It is stored hashed and shown only to the admin,
@@ -215,11 +219,11 @@ whenever they like, and changing an NID there changes the password too.
 | Add / edit / delete members | ✅ | — |
 | Log contributions | ✅ | — |
 | Own contribution history and PDF | ✅ | ✅ own only |
-| Edit own profile | ✅ | ✅ |
+| Edit own profile | ✅ | — (read-only view) |
 | View the account roster | ✅ | — |
 
-A `MEMBER` login is linked to a `Member` row and can reach only `/my-statement`
-and its own statement PDF. Authorization is enforced in the API layer
+A `MEMBER` login is linked to a `Member` row and can reach `/my-statement`, its
+own statement PDF, and a read-only `/profile`. Authorization is enforced in the API layer
 (`src/lib/api.ts`) and mirrored in page guards (`src/lib/session.ts`).
 
 ## Data model
@@ -258,7 +262,7 @@ today" and "on track" mean:
   overall as **aggregates only** — never another member's individual figures.
 
 The header shows **today's date in Dhaka time** (`Asia/Dhaka`) for every signed-in
-role.
+role. On a phone the weekday is dropped so the pill stays on one line.
 
 A member counts as *on track* when what they have paid covers the one-time fee
 plus one month for every month elapsed since they joined.

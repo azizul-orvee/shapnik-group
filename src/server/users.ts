@@ -1,7 +1,7 @@
 import "server-only";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { notFound } from "@/lib/api";
+import { ApiError, notFound } from "@/lib/api";
 import type { ProfileUpdateInput } from "@/lib/validation";
 
 /** Read-only roster of every login in the society. */
@@ -40,16 +40,20 @@ export async function getProfile(userId: string) {
 }
 
 /**
- * A user editing their own details. The NID is also the sign-in password, so
+ * Admin filling in their own details. The NID is also the sign-in password, so
  * changing it re-hashes the password too — otherwise the credential the app
- * tells them to use would stop working.
+ * tells them to use would stop working. Members cannot call this: their
+ * registered details live on the Member row and only an admin edits those.
  */
 export async function updateProfile(userId: string, input: ProfileUpdateInput) {
   const current = await prisma.user.findUnique({
     where: { id: userId },
-    select: { nationalId: true },
+    select: { nationalId: true, role: true },
   });
   if (!current) throw notFound("Account not found");
+  if (current.role !== "ADMIN") {
+    throw new ApiError(403, "Ask the admin to update your registered details.");
+  }
 
   const nidChanged =
     input.nationalId !== undefined && input.nationalId !== current.nationalId;

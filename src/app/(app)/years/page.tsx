@@ -43,7 +43,7 @@ export default async function YearsPage() {
       <div className="grid gap-3">
         {summaries.map(({ plan, progress }) => (
           <Card key={plan.year}>
-            <CardHeader className="flex flex-row items-start justify-between space-y-0">
+            <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <CardTitle className="text-lg">
                   <Link href={`/years/${plan.year}`} className="hover:underline">

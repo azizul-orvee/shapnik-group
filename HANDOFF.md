@@ -151,12 +151,12 @@ surfaces server-side field errors into RHF's `setError`.
 | Create/edit members, payments | ✅ | ❌ |
 | Year plans | ✅ | ❌ |
 | Own statement + own PDF | ✅ | ✅ own only |
-| Edit own profile | ✅ | ✅ |
+| Edit own profile | ✅ | ❌ (read-only view of their Member row) |
 | Account roster | ✅ | ❌ |
 
 
 A `MEMBER` login is linked to a `Member` row via `User.memberId` and can reach
-only `/my-statement` and its own statement PDF.
+`/my-statement`, its own statement PDF, and a read-only `/profile`.
 
 ### Directory map
 
@@ -231,7 +231,7 @@ src/
 | `/fund` | org readers | totals, growth chart, recent payments |
 | `/reports`, `/reports/monthly`, `/reports/annual` | org readers | |
 | `/users` | ADMIN | read-only roster |
-| `/profile` | any signed-in user | edit your own details |
+| `/profile` | any signed-in user | admin edits their own User details; member sees a read-only copy of their Member row (NID masked) |
 | `/years`, `/years/new`, `/years/[year]`, `/years/[year]/edit` | ADMIN | 2025/2026 view-only (no Locked label); 2027+ added by admin |
 | `/my-statement` | MEMBER (and anyone with a linked member) | `?year=` filter; what-to-pay-next, lifetime totals, target breakdown, society **aggregates only** |
 
@@ -246,7 +246,7 @@ src/
 | `/api/contributions/bulk` | POST |
 | `/api/contributions/lump-sum` | POST |
 | `/api/users` | GET (ADMIN, read-only) |
-| `/api/profile` | GET PATCH (your own account only) |
+| `/api/profile` | GET PATCH (ADMIN only — own User row). Members get 403. |
 | `/api/years` | GET POST (ADMIN) |
 | `/api/years/[year]` | PATCH DELETE (ADMIN) |
 | `/api/reports/members/[id]/pdf` | GET |
@@ -337,7 +337,8 @@ optional `memberId`.
 
 - **NID and password must stay in step.** `updateMember()` re-hashes when the NID
   changes and moves `username` when the member ID changes; `updateProfile()` does
-  the same for a user editing themselves. Any new NID write must too.
+  the same when the admin edits their own NID. Any new NID write must too.
+  Members cannot PATCH `/api/profile` — their details live on the Member row.
 - Admins also carry the member identity fields (`phone`, `nationalId`,
   `nomineeName`, `nomineeNationalId`, `nomineePhone`), all **nullable** — they
   fill them in at `/profile` whenever they like.
@@ -378,9 +379,14 @@ works normally.
 ## 6. UI conventions
 
 **Mobile first** — the treasurer logs payments on a phone. Bottom nav below `md`,
-sidebar above. Tables live in `overflow-x-auto`; hide secondary columns on small
-screens rather than shrinking them. The app header shows today's date in
-**Dhaka time** for every role (`formatDhakaToday()` in `(app)/layout.tsx`).
+sidebar above. The bar holds at most four primary destinations plus **More**;
+the rest (Fund, Reports, Years, Accounts) open in a bottom sheet. Members see
+Home and Profile (Profile is a read-only copy of their Member row). People and payment lists are tappable cards on a phone
+(`MobileList`) and tables from `md` up (`DesktopTable`). The app header shows
+today's date in **Dhaka time** for every role (`formatDhakaToday()` in
+`(app)/layout.tsx`); the theme toggle is in the header from `md` up, and in the
+account menu / More sheet on a phone. The root viewport uses `viewportFit: "cover"`
+so the chrome respects the iOS safe area.
 
 **Nothing with a function in it crosses the RSC boundary.** Nav icons are string
 keys resolved on the client (`src/components/app/nav-links.ts` → `app-nav.tsx`).
@@ -422,10 +428,11 @@ Rules that are load-bearing:
 | `DuesTable` | `/dues` list with search + one-tap collection (client) |
 | `LumpSumDialog` | splits one large payment, with a live preview (client) |
 | `MonthPicker` | `?month=` stepper bounded by the window |
-| `StatCard`, `PageHeader`, `EmptyState`, `Field` | layout primitives; `StatCard` tones: default / positive / negative / brand |
+| `StatCard`, `PageHeader`, `EmptyState`, `Field`, `FormActions` | layout primitives; `StatCard` tones: default / positive / negative / brand; `FormActions` full-width stacked buttons on a phone |
+| `MobileList` / `MobileListItem` / `DesktopTable` | phone card lists paired with the `md+` spreadsheet |
 | `BrandMark` | the society logo (`public/logo.svg`) on a white badge (header, login); favicon is `src/app/icon.svg` + `apple-icon.png` |
 | PDF letterhead | "Shapnik Group" + logo raster; member codes print as `M-03` |
-| `ThemeToggle` | header light/dark switch; persists `localStorage.theme` |
+| `ThemeToggle` / `ThemeToggleRow` | header light/dark switch from `md` up; labeled row in the More sheet; persists `localStorage.theme` |
 
 ### Design system
 

@@ -11,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PageHeader } from "@/components/app/page-header";
+import { DesktopTable, MobileList, MobileListItem } from "@/components/app/mobile-list";
 import { MonthPicker } from "@/components/app/month-picker";
 import { StatCard } from "@/components/app/stat-card";
 import { PaidBadge } from "@/components/app/member-badges";
@@ -62,7 +63,7 @@ export default async function MonthlyReportPage({ searchParams }: PageProps<"/re
             {formatTakaShort(dues.collected)} collected for this month.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <CardContent className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-3">
           <StatCard label="Members due" value={String(dues.dueCount)} />
           <StatCard label="Paid" value={String(dues.paidCount)} hint={`${ratePct}%`} tone="positive" />
           <StatCard
@@ -89,7 +90,24 @@ export default async function MonthlyReportPage({ searchParams }: PageProps<"/re
         </CardContent>
       </Card>
 
-      <div className="overflow-x-auto rounded-lg border">
+      <MobileList>
+        {dues.rows.map((row) => (
+          <MobileListItem
+            key={row.memberId}
+            title={row.name}
+            subtitle={<span className="font-mono">{row.memberCode}</span>}
+            trailing={
+              <div className="flex flex-col items-end gap-1">
+                <span className="font-medium tabular-nums">
+                  {row.amount === null ? "—" : formatTakaShort(row.amount)}
+                </span>
+                <PaidBadge paid={row.paid} />
+              </div>
+            }
+          />
+        ))}
+      </MobileList>
+      <DesktopTable>
         <Table>
           <TableHeader>
             <TableRow>
@@ -114,7 +132,7 @@ export default async function MonthlyReportPage({ searchParams }: PageProps<"/re
             ))}
           </TableBody>
         </Table>
-      </div>
+      </DesktopTable>
     </>
   );
 }

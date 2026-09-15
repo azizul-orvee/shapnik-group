@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field } from "@/components/app/field";
+import { FormActions } from "@/components/app/form-actions";
 import {
   profileUpdateSchema,
   type ProfileFormInput,
@@ -133,11 +134,11 @@ export function ProfileForm({
         </Field>
       </fieldset>
 
-      <div className="flex gap-2 pt-2">
+      <FormActions>
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? "Saving…" : "Save profile"}
         </Button>
-      </div>
+      </FormActions>
     </form>
   );
 }

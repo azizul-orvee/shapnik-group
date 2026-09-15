@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PageHeader, EmptyState } from "@/components/app/page-header";
+import { DesktopTable, MobileList } from "@/components/app/mobile-list";
 import { StatCard } from "@/components/app/stat-card";
 import { Meter, MeterLegend } from "@/components/app/meter";
 import { FundGrowthChart } from "@/components/app/fund-growth-chart";
@@ -53,7 +54,7 @@ export default async function FundPage() {
         }
       />
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
         <StatCard
           label="Total fund"
           value={formatTakaShort(balance)}
@@ -111,35 +112,22 @@ export default async function FundPage() {
               description="Payments recorded by the treasurer will appear here."
             />
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-24">Date</TableHead>
-                    <TableHead>Member</TableHead>
-                    <TableHead className="hidden sm:table-cell">Covers</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recent.map((row) => (
-                    <TableRow key={row.id}>
-                      <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
-                        {formatDate(row.paidOnDate)}
-                      </TableCell>
-                      <TableCell>
+            <>
+              <MobileList>
+                {recent.map((row) => (
+                  <li key={row.id} className="px-4 py-3.5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
                         <Link
                           href={`/members/${row.member.id}`}
                           className="font-medium underline-offset-4 hover:underline"
                         >
                           {row.member.name}
                         </Link>
-                        <span className="text-muted-foreground block font-mono text-xs">
+                        <p className="text-muted-foreground mt-0.5 font-mono text-xs">
                           {row.member.memberId}
-                        </span>
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        <span className="flex items-center gap-2 text-sm">
+                        </p>
+                        <p className="mt-1.5 flex items-center gap-2 text-sm">
                           <span
                             className={
                               row.type === "ONE_TIME"
@@ -155,16 +143,73 @@ export default async function FundPage() {
                                 ).padStart(2, "0")}`,
                               )
                             : "One-time fee"}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-viz-good text-right font-medium tabular-nums">
+                        </p>
+                        <p className="text-muted-foreground mt-0.5 text-xs">
+                          {formatDate(row.paidOnDate)}
+                        </p>
+                      </div>
+                      <p className="text-viz-good font-heading shrink-0 text-base font-semibold tabular-nums">
                         +{formatTakaShort(row.amount)}
-                      </TableCell>
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </MobileList>
+              <DesktopTable>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-24">Date</TableHead>
+                      <TableHead>Member</TableHead>
+                      <TableHead>Covers</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {recent.map((row) => (
+                      <TableRow key={row.id}>
+                        <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
+                          {formatDate(row.paidOnDate)}
+                        </TableCell>
+                        <TableCell>
+                          <Link
+                            href={`/members/${row.member.id}`}
+                            className="font-medium underline-offset-4 hover:underline"
+                          >
+                            {row.member.name}
+                          </Link>
+                          <span className="text-muted-foreground block font-mono text-xs">
+                            {row.member.memberId}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="flex items-center gap-2 text-sm">
+                            <span
+                              className={
+                                row.type === "ONE_TIME"
+                                  ? "bg-viz-onetime size-2 shrink-0 rounded-full"
+                                  : "bg-viz-monthly size-2 shrink-0 rounded-full"
+                              }
+                              aria-hidden
+                            />
+                            {row.paidForMonth
+                              ? formatMonthKey(
+                                  `${row.paidForMonth.getUTCFullYear()}-${String(
+                                    row.paidForMonth.getUTCMonth() + 1,
+                                  ).padStart(2, "0")}`,
+                                )
+                              : "One-time fee"}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-viz-good text-right font-medium tabular-nums">
+                          +{formatTakaShort(row.amount)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </DesktopTable>
+            </>
           )}
         </CardContent>
       </Card>

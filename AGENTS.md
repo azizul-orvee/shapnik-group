@@ -177,9 +177,12 @@ member API routes and the member detail page both apply it.
 `Organization.memberLimit` (default **30**) caps members; deleting one frees a
 slot. `createMember()` enforces it.
 
-Anyone may edit **their own** account at `/profile` (`PATCH /api/profile`) — never
-anyone else's. `/users` is a read-only roster: member logins come from member
-creation, and the admin is seeded.
+The **admin** fills in their own details at `/profile` (`PATCH /api/profile`) —
+never anyone else's. A **member** sees `/profile` as a read-only copy of their
+`Member` row (NID and nominee NID masked); they cannot change name, NID or
+nominee. Corrections go through the admin on `/members/[id]/edit`. `/users` is a
+read-only roster: member logins come from member creation, and the admin is
+seeded.
 
 ## Boundaries
 
@@ -294,14 +297,19 @@ the wrong value in the other theme.
 ## UI
 
 Mobile first — the treasurer logs payments on a phone. A floating rounded bottom
-nav below `md` (thumb-reachable, safe-area aware), sidebar above. Keep tables
-scrollable in an `overflow-x-auto` wrapper and hide secondary columns on small
-screens rather than shrinking them.
+nav below `md` (thumb-reachable, safe-area aware), sidebar above. The bar shows
+at most four primary destinations plus **More**; extra admin sections (Fund,
+Reports, Years, Accounts) open in a bottom sheet. Members get Home and Profile
+(Profile is read-only — their registered details, NID masked).
+Lists of people and payments render as tappable cards on a phone and as tables
+from `md` up (`MobileList` / `DesktopTable` in `src/components/app/mobile-list.tsx`).
+Tap targets are 44px on small screens.
 
 The signed-in header shows today's date in Dhaka time (`formatDhakaToday()`) — on
-the narrowest phones the weekday is dropped, never the whole pill. Do not import
-`src/server/years.ts` from a client component — use `planForMonthKey` from
-`src/lib/dates.ts`.
+the narrowest phones the weekday is dropped, never the whole pill. Theme toggle
+lives in the header from `md` up, and in the account menu / More sheet on a
+phone. Do not import `src/server/years.ts` from a client component — use
+`planForMonthKey` from `src/lib/dates.ts`.
 
 ## Two database entry points
 

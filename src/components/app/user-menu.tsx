@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LogOut, UserRound } from "lucide-react";
+import { LogOut, Moon, Sun, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { toggleTheme } from "./theme-toggle";
 
 export function UserMenu({
   name,
@@ -34,7 +35,12 @@ export function UserMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="rounded-full" aria-label="Account menu">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-10 rounded-full md:size-8"
+          aria-label="Account menu"
+        >
           <span className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-full text-xs font-semibold">
             {initials}
           </span>
@@ -55,14 +61,27 @@ export function UserMenu({
             My profile
           </Link>
         </DropdownMenuItem>
-        <form action={signOutAction}>
-          <DropdownMenuItem asChild>
-            <button type="submit" className="w-full cursor-pointer">
-              <LogOut className="size-4" />
-              Sign out
-            </button>
-          </DropdownMenuItem>
-        </form>
+        <DropdownMenuItem
+          className="cursor-pointer md:hidden"
+          onSelect={(event) => {
+            event.preventDefault();
+            toggleTheme();
+          }}
+        >
+          <Sun className="size-4 dark:hidden" />
+          <Moon className="hidden size-4 dark:block" />
+          <span className="dark:hidden">Switch to dark mode</span>
+          <span className="hidden dark:inline">Switch to light mode</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          className="cursor-pointer"
+          onSelect={() => {
+            void signOutAction();
+          }}
+        >
+          <LogOut className="size-4" />
+          Sign out
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

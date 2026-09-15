@@ -52,14 +52,17 @@ export function MemberProgressList({
                 >
                   {row.name}
                 </Link>
-                <div className="text-muted-foreground flex items-center gap-2 text-xs">
+                <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
                   <span className="font-mono">{row.memberCode}</span>
                   <span aria-hidden>·</span>
                   <span>
                     {row.monthsPaid}/{row.monthCount} months
                   </span>
                   {showPhone && row.phone ? (
-                    <a href={`tel:${row.phone.replace(/\s/g, "")}`} className="flex items-center gap-1 hover:underline">
+                    <a
+                      href={`tel:${row.phone.replace(/\s/g, "")}`}
+                      className="flex min-h-8 items-center gap-1 hover:underline"
+                    >
                       <Phone className="size-3" />
                       {row.phone}
                     </a>

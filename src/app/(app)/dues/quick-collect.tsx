@@ -91,7 +91,9 @@ export function QuickCollect({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm">Collect from {pending.length} pending</Button>
+        <Button size="sm" className="h-11 w-full sm:h-7 sm:w-auto">
+          Collect from {pending.length} pending
+        </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
@@ -140,10 +142,10 @@ export function QuickCollect({
         <ul className="max-h-64 divide-y overflow-y-auto rounded-md border">
           {pending.map((member) => (
             <li key={member.memberId}>
-              <label className="hover:bg-accent/50 flex cursor-pointer items-center gap-3 px-3 py-2.5 text-sm">
+              <label className="flex min-h-12 cursor-pointer items-center gap-3 px-3 py-3 text-sm">
                 <input
                   type="checkbox"
-                  className="accent-primary size-4"
+                  className="accent-primary size-5 shrink-0"
                   checked={selected.has(member.memberId)}
                   onChange={() => toggle(member.memberId)}
                 />

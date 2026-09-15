@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Field } from "@/components/app/field";
+import { FormActions } from "@/components/app/form-actions";
 import {
   yearPlanSchema,
   type YearPlanFormInput,
@@ -146,14 +147,14 @@ export function YearPlanForm({
         </Field>
       </div>
 
-      <div className="flex gap-2 pt-2">
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Saving…" : mode === "create" ? "Add year" : "Save changes"}
-        </Button>
+      <FormActions>
         <Button type="button" variant="ghost" onClick={() => router.back()}>
           Cancel
         </Button>
-      </div>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Saving…" : mode === "create" ? "Add year" : "Save changes"}
+        </Button>
+      </FormActions>
     </form>
   );
 }

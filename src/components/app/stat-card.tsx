@@ -35,7 +35,7 @@ export function StatCard({
   }[tone];
 
   return (
-    <Card className="gap-0 p-4">
+    <Card className="gap-0 p-3.5 sm:p-4">
       <div className="flex items-start justify-between gap-3">
         <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
           {label}
@@ -53,7 +53,7 @@ export function StatCard({
       </div>
       <p
         className={cn(
-          "font-heading mt-2 truncate text-2xl font-semibold tabular-nums sm:text-[1.7rem]",
+          "font-heading mt-1.5 text-lg leading-tight font-semibold tabular-nums sm:mt-2 sm:text-[1.7rem]",
           toneValue,
         )}
       >

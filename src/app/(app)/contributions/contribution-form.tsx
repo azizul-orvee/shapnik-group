@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Field } from "@/components/app/field";
+import { FormActions } from "@/components/app/form-actions";
 import {
   contributionCreateSchema,
   type ContributionCreateInput,
@@ -107,7 +108,7 @@ export function ContributionForm({
             }
           }}
         >
-          <SelectTrigger id="type" className="w-full">
+          <SelectTrigger id="type" className="w-full md:h-8">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -122,7 +123,7 @@ export function ContributionForm({
           value={watch("memberId")}
           onValueChange={(value) => setValue("memberId", value, { shouldDirty: true })}
         >
-          <SelectTrigger id="memberId" className="w-full">
+          <SelectTrigger id="memberId" className="w-full md:h-8">
             <SelectValue placeholder="Choose a member" />
           </SelectTrigger>
           <SelectContent>
@@ -150,7 +151,7 @@ export function ContributionForm({
               if (plan) setValue("amount", plan.monthlyAmount, { shouldDirty: true });
             }}
           >
-            <SelectTrigger id="paidForMonth" className="w-full">
+            <SelectTrigger id="paidForMonth" className="w-full md:h-8">
               <SelectValue placeholder="Choose a month" />
             </SelectTrigger>
             <SelectContent>
@@ -179,7 +180,7 @@ export function ContributionForm({
               if (plan) setValue("amount", plan.oneTimeFee, { shouldDirty: true });
             }}
           >
-            <SelectTrigger id="paidForYear" className="w-full">
+            <SelectTrigger id="paidForYear" className="w-full md:h-8">
               <SelectValue placeholder="Choose a year" />
             </SelectTrigger>
             <SelectContent>
@@ -221,14 +222,14 @@ export function ContributionForm({
         <Textarea id="note" rows={2} {...register("note")} />
       </Field>
 
-      <div className="flex gap-2 pt-2">
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Saving…" : "Record payment"}
-        </Button>
+      <FormActions>
         <Button type="button" variant="ghost" onClick={() => router.back()}>
           Cancel
         </Button>
-      </div>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Saving…" : "Record payment"}
+        </Button>
+      </FormActions>
     </form>
   );
 }

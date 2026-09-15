@@ -10,6 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PageHeader } from "@/components/app/page-header";
+import { DesktopTable, MobileList, MobileListItem } from "@/components/app/mobile-list";
 import { requireSession } from "@/lib/session";
 import { canManageUsers, ROLE_LABELS } from "@/lib/rbac";
 import { listUsers } from "@/server/users";
@@ -30,31 +31,41 @@ export default async function UsersPage() {
         description="Every sign-in for this society. Member logins are created with the member."
       />
 
-      <div className="overflow-x-auto rounded-lg border">
+      <MobileList>
+        {users.map((user) => (
+          <MobileListItem
+            key={user.id}
+            title={user.name}
+            subtitle={
+              <>
+                <span className="font-mono">{user.username ?? "—"}</span>
+                {user.member ? ` · ${user.member.memberId}` : " · admin login"}
+              </>
+            }
+            trailing={<Badge variant={user.role === "ADMIN" ? "default" : "secondary"}>{ROLE_LABELS[user.role]}</Badge>}
+          />
+        ))}
+      </MobileList>
+      <DesktopTable>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Sign-in ID</TableHead>
-              <TableHead className="hidden md:table-cell">Linked member</TableHead>
-              <TableHead className="hidden sm:table-cell">Created</TableHead>
+              <TableHead>Linked member</TableHead>
+              <TableHead>Created</TableHead>
               <TableHead className="text-right">Role</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {users.map((user) => (
               <TableRow key={user.id}>
-                <TableCell className="font-medium">
-                  {user.name}
-                  <span className="text-muted-foreground block font-mono text-xs sm:hidden">
-                    {user.username ?? "—"}
-                  </span>
-                </TableCell>
+                <TableCell className="font-medium">{user.name}</TableCell>
                 <TableCell className="font-mono text-xs">{user.username ?? "—"}</TableCell>
-                <TableCell className="text-muted-foreground hidden md:table-cell">
+                <TableCell className="text-muted-foreground">
                   {user.member ? `${user.member.memberId} — ${user.member.name}` : "—"}
                 </TableCell>
-                <TableCell className="text-muted-foreground hidden text-xs sm:table-cell">
+                <TableCell className="text-muted-foreground text-xs">
                   {formatDate(user.createdAt)}
                 </TableCell>
                 <TableCell className="text-right">
@@ -66,7 +77,7 @@ export default async function UsersPage() {
             ))}
           </TableBody>
         </Table>
-      </div>
+      </DesktopTable>
 
       <p className="text-muted-foreground mt-3 text-xs">
         Everyone signs in with their ID and their NID. Adding a member creates their

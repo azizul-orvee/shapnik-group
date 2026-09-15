@@ -35,17 +35,18 @@ export function MonthPicker({
   const isFuture = monthKey > currentMonthKey();
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex w-full items-center gap-1 sm:w-auto">
       <Button
         variant="outline"
         size="icon"
         aria-label="Previous month"
         disabled={atStart}
         onClick={() => go(addMonths(monthKey, -1))}
+        className="size-11 sm:size-8"
       >
         <ChevronLeft className="size-4" />
       </Button>
-      <div className="min-w-36 text-center">
+      <div className="min-w-0 flex-1 text-center sm:min-w-36 sm:flex-none">
         <span className="block text-sm font-medium">{formatMonthKey(monthKey)}</span>
         {isFuture ? (
           <span className="text-muted-foreground block text-[11px]">Upcoming</span>
@@ -57,6 +58,7 @@ export function MonthPicker({
         aria-label="Next month"
         disabled={atEnd}
         onClick={() => go(addMonths(monthKey, 1))}
+        className="size-11 sm:size-8"
       >
         <ChevronRight className="size-4" />
       </Button>

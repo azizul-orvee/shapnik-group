@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PageHeader } from "@/components/app/page-header";
+import { DesktopTable, MobileList, MobileListItem } from "@/components/app/mobile-list";
 import { StatCard } from "@/components/app/stat-card";
 import { requireOrgReader } from "@/lib/session";
 import { formatTakaShort } from "@/lib/money";
@@ -100,7 +101,21 @@ export default async function AnnualReportPage({ searchParams }: PageProps<"/rep
           <CardTitle className="text-base">Monthly contributions</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+          <MobileList className="ring-0">
+            {report.months.map((month) => (
+              <MobileListItem
+                key={month.monthKey}
+                title={formatMonthKeyShort(month.monthKey)}
+                subtitle={`${month.count} payment${month.count === 1 ? "" : "s"}`}
+                trailing={
+                  <span className="font-heading text-base font-semibold tabular-nums">
+                    {formatTakaShort(month.total)}
+                  </span>
+                }
+              />
+            ))}
+          </MobileList>
+          <DesktopTable className="border-0">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -121,7 +136,7 @@ export default async function AnnualReportPage({ searchParams }: PageProps<"/rep
                 ))}
               </TableBody>
             </Table>
-          </div>
+          </DesktopTable>
         </CardContent>
       </Card>
 

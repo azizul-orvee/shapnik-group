@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field } from "@/components/app/field";
+import { FormActions } from "@/components/app/form-actions";
 import {
   memberCreateSchema,
   type MemberCreateInput,
@@ -156,14 +157,14 @@ export function MemberForm({ memberId, defaultValues }: Props) {
         </p>
       )}
 
-      <div className="flex gap-2 pt-2">
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Saving…" : isEdit ? "Save changes" : "Add member"}
-        </Button>
+      <FormActions>
         <Button type="button" variant="ghost" onClick={() => router.back()}>
           Cancel
         </Button>
-      </div>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Saving…" : isEdit ? "Save changes" : "Add member"}
+        </Button>
+      </FormActions>
     </form>
   );
 }

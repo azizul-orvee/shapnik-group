@@ -18,7 +18,7 @@ export default async function LoginPage() {
   if (await getAppSession()) redirect("/");
 
   return (
-    <main className="relative flex min-h-dvh items-center justify-center overflow-hidden p-4">
+    <main className="relative flex min-h-dvh items-center justify-center overflow-hidden p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
       {/* Ambient brand glow behind the card. */}
       <div
         aria-hidden

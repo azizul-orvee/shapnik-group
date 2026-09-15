@@ -58,12 +58,13 @@ export default async function DashboardPage() {
 
       {/* Hero — the one number the society leads with. */}
       <Card className="bg-brand-wash ring-brand/15 mb-4 overflow-hidden">
-        <CardContent className="flex flex-col gap-6 px-4 py-3 sm:flex-row sm:items-center sm:gap-8">
+        <CardContent className="flex flex-row items-center gap-4 px-4 py-4 sm:gap-8">
           <ProgressRing
             value={progress.completion}
             label={`${yearPct}%`}
             sublabel={`of ${year} target`}
             tone={progress.completion >= 0.75 ? "good" : "monthly"}
+            size={108}
           />
 
           <div className="min-w-0 flex-1 space-y-3">
@@ -71,7 +72,7 @@ export default async function DashboardPage() {
               <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                 Collected this year
               </p>
-              <p className="font-heading mt-1 text-[2.1rem] leading-none font-bold tracking-tight tabular-nums sm:text-5xl">
+              <p className="font-heading mt-1 text-[1.85rem] leading-none font-bold tracking-tight tabular-nums sm:text-5xl">
                 {formatTakaShort(progress.totalCollected)}
               </p>
               <p className="text-muted-foreground mt-2 text-sm">
@@ -86,7 +87,7 @@ export default async function DashboardPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-3">
         <StatCard
           label={`${formatMonthKey(monthKey)} paid`}
           value={`${dues.paidCount}/${dues.dueCount}`}

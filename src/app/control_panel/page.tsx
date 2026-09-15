@@ -18,7 +18,7 @@ export default async function ControlPanelPage() {
   if (session) redirect(session.role === "ADMIN" ? "/dashboard" : "/my-statement");
 
   return (
-    <main className="flex min-h-dvh items-center justify-center p-4">
+    <main className="flex min-h-dvh items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
       <div className="w-full max-w-sm">
         <Card>
           <CardContent className="space-y-6 p-6">

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader, EmptyState } from "@/components/app/page-header";
-import { StatCard } from "@/components/app/stat-card";
+import { DesktopTable, MobileList } from "@/components/app/mobile-list";
 import { Meter, MeterLegend, ProgressRing } from "@/components/app/meter";
 import { MonthGrid, MonthGridLegend } from "@/components/app/month-grid";
 import { requireSession } from "@/lib/session";
@@ -105,12 +105,13 @@ export default async function MyStatementPage({ searchParams }: PageProps<"/my-s
 
       {/* Hero — how far through the year's obligation this member is. */}
       <Card className="bg-brand-wash ring-brand/15 mb-4">
-        <CardContent className="flex flex-col gap-6 px-4 py-3 sm:flex-row sm:items-center sm:gap-8">
+        <CardContent className="flex flex-row items-center gap-4 px-4 py-4 sm:gap-8">
           <ProgressRing
             value={progress.completion}
             label={`${pct}%`}
             sublabel={`of ${year} target`}
             tone={progress.completion >= 1 ? "good" : progress.onTrack ? "monthly" : "warning"}
+            size={108}
           />
 
           <div className="min-w-0 flex-1 space-y-3">
@@ -118,7 +119,7 @@ export default async function MyStatementPage({ searchParams }: PageProps<"/my-s
               <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                 Paid this year
               </p>
-              <p className="font-heading mt-1 text-[2.1rem] leading-none font-bold tracking-tight tabular-nums sm:text-5xl">
+              <p className="font-heading mt-1 text-[1.85rem] leading-none font-bold tracking-tight tabular-nums sm:text-5xl">
                 {formatTakaShort(progress.totalPaid)}
               </p>
               <p className="text-muted-foreground mt-1 text-sm">
@@ -148,23 +149,37 @@ export default async function MyStatementPage({ searchParams }: PageProps<"/my-s
 
       {/* Lifetime context — members ask "how much have I saved altogether?", and
           a single year's card cannot answer it. */}
-      <div className="mb-4 grid gap-3 sm:grid-cols-3">
-        <StatCard
-          label="Saved with the society"
-          value={formatTakaShort(statement.total)}
-          hint="Across every year, all payments"
-        />
-        <StatCard
-          label="Months settled"
-          value={`${statement.monthsPaid}`}
-          hint="Monthly contributions recorded to date"
-        />
-        <StatCard
-          label="Member since"
-          value={formatDate(progress.joinDate)}
-          hint={progress.memberCode}
-        />
-      </div>
+      <Card className="mb-4">
+        <CardContent className="grid grid-cols-3 gap-3 px-4 py-1">
+          <div className="min-w-0">
+            <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+              Lifetime
+            </p>
+            <p className="font-heading mt-1 text-base leading-tight font-semibold tabular-nums sm:text-xl">
+              {formatTakaShort(statement.total)}
+            </p>
+            <p className="text-muted-foreground mt-0.5 text-[11px]">All years</p>
+          </div>
+          <div className="min-w-0">
+            <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+              Months
+            </p>
+            <p className="font-heading mt-1 text-base leading-tight font-semibold tabular-nums sm:text-xl">
+              {statement.monthsPaid}
+            </p>
+            <p className="text-muted-foreground mt-0.5 text-[11px]">Settled</p>
+          </div>
+          <div className="min-w-0">
+            <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+              Since
+            </p>
+            <p className="font-heading mt-1 text-base leading-tight font-semibold tabular-nums sm:text-xl">
+              {formatDate(progress.joinDate)}
+            </p>
+            <p className="text-muted-foreground mt-0.5 font-mono text-[11px]">{progress.memberCode}</p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* The two obligations, each with its own meter. */}
       <div className="grid gap-3 sm:grid-cols-2">
@@ -313,45 +328,67 @@ export default async function MyStatementPage({ searchParams }: PageProps<"/my-s
               description="Once the treasurer logs your payments they will show up here."
             />
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Covers</TableHead>
-                    <TableHead className="hidden sm:table-cell">Paid on</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {[...yearRows].reverse().map((row) => (
-                    <TableRow key={row.id}>
-                      <TableCell className="font-medium">
-                        <span className="flex items-center gap-2">
-                          <span
-                            className={
-                              row.type === "ONE_TIME"
-                                ? "bg-viz-onetime size-2 shrink-0 rounded-full"
-                                : "bg-viz-monthly size-2 shrink-0 rounded-full"
-                            }
-                            aria-hidden
-                          />
-                          {row.monthKey ? formatMonthKey(row.monthKey) : `One-time fee ${year}`}
-                        </span>
-                        <span className="text-muted-foreground block text-xs sm:hidden">
-                          Paid {formatDate(row.paidOnDate)}
-                        </span>
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">
+            <>
+              <MobileList className="ring-0">
+                {[...yearRows].reverse().map((row) => (
+                  <li key={row.id} className="flex items-center justify-between gap-3 px-0 py-3">
+                    <div className="min-w-0">
+                      <span className="flex items-center gap-2 font-medium">
+                        <span
+                          className={
+                            row.type === "ONE_TIME"
+                              ? "bg-viz-onetime size-2 shrink-0 rounded-full"
+                              : "bg-viz-monthly size-2 shrink-0 rounded-full"
+                          }
+                          aria-hidden
+                        />
+                        {row.monthKey ? formatMonthKey(row.monthKey) : `One-time fee ${year}`}
+                      </span>
+                      <span className="text-muted-foreground mt-0.5 block pl-4 text-xs">
                         {formatDate(row.paidOnDate)}
-                      </TableCell>
-                      <TableCell className="text-right font-medium tabular-nums">
-                        {formatTakaShort(row.amount)}
-                      </TableCell>
+                      </span>
+                    </div>
+                    <span className="font-heading shrink-0 text-base font-semibold tabular-nums">
+                      {formatTakaShort(row.amount)}
+                    </span>
+                  </li>
+                ))}
+              </MobileList>
+              <DesktopTable className="border-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Covers</TableHead>
+                      <TableHead>Paid on</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {[...yearRows].reverse().map((row) => (
+                      <TableRow key={row.id}>
+                        <TableCell className="font-medium">
+                          <span className="flex items-center gap-2">
+                            <span
+                              className={
+                                row.type === "ONE_TIME"
+                                  ? "bg-viz-onetime size-2 shrink-0 rounded-full"
+                                  : "bg-viz-monthly size-2 shrink-0 rounded-full"
+                              }
+                              aria-hidden
+                            />
+                            {row.monthKey ? formatMonthKey(row.monthKey) : `One-time fee ${year}`}
+                          </span>
+                        </TableCell>
+                        <TableCell>{formatDate(row.paidOnDate)}</TableCell>
+                        <TableCell className="text-right font-medium tabular-nums">
+                          {formatTakaShort(row.amount)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </DesktopTable>
+            </>
           )}
         </CardContent>
       </Card>
@@ -366,7 +403,7 @@ export default async function MyStatementPage({ searchParams }: PageProps<"/my-s
             member&rsquo;s figures are shown here.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-3">
+        <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-3">
           <div>
             <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
               Members

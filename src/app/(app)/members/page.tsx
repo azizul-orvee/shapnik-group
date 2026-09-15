@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PageHeader, EmptyState } from "@/components/app/page-header";
+import { DesktopTable, MobileList, MobileListItem } from "@/components/app/mobile-list";
 import { requireOrgReader } from "@/lib/session";
 import { canWrite } from "@/lib/rbac";
 import { formatDate } from "@/lib/dates";
@@ -46,18 +47,18 @@ export default async function MembersPage({ searchParams }: PageProps<"/members"
         }
       />
 
-      <form className="mb-4 flex flex-wrap gap-2" action="/members">
-        <div className="relative min-w-48 flex-1">
+      <form className="mb-4 flex gap-2" action="/members">
+        <div className="relative min-w-0 flex-1">
           <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
           <Input
             name="q"
             defaultValue={search}
             placeholder="Search name, ID or phone"
-            className="pl-9"
+            className="h-11 pl-9 md:h-8"
             aria-label="Search members"
           />
         </div>
-        <Button type="submit" variant="secondary">
+        <Button type="submit" variant="secondary" className="h-11 md:h-8">
           Search
         </Button>
       </form>
@@ -79,40 +80,55 @@ export default async function MembersPage({ searchParams }: PageProps<"/members"
           }
         />
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-24">ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead className="hidden sm:table-cell">Phone</TableHead>
-                <TableHead className="hidden md:table-cell">Joined</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {members.map((member) => (
-                <TableRow key={member.id}>
-                  <TableCell className="font-mono text-xs">{member.memberId}</TableCell>
-                  <TableCell>
-                    <Link
-                      href={`/members/${member.id}`}
-                      className="font-medium underline-offset-4 hover:underline"
-                    >
-                      {member.name}
-                    </Link>
-                    <span className="text-muted-foreground block text-xs sm:hidden">
-                      {member.phone ?? "No phone"}
-                    </span>
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">{member.phone ?? "—"}</TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {formatDate(member.joinDate)}
-                  </TableCell>
+        <>
+          <MobileList>
+            {members.map((member) => (
+              <MobileListItem
+                key={member.id}
+                href={`/members/${member.id}`}
+                title={member.name}
+                subtitle={
+                  <>
+                    <span className="font-mono">{member.memberId}</span>
+                    {member.phone ? ` · ${member.phone}` : ""}
+                  </>
+                }
+                trailing={
+                  <span className="text-muted-foreground text-[11px]">{formatDate(member.joinDate)}</span>
+                }
+              />
+            ))}
+          </MobileList>
+          <DesktopTable>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-24">ID</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead>Joined</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {members.map((member) => (
+                  <TableRow key={member.id}>
+                    <TableCell className="font-mono text-xs">{member.memberId}</TableCell>
+                    <TableCell>
+                      <Link
+                        href={`/members/${member.id}`}
+                        className="font-medium underline-offset-4 hover:underline"
+                      >
+                        {member.name}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{member.phone ?? "—"}</TableCell>
+                    <TableCell>{formatDate(member.joinDate)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </DesktopTable>
+        </>
       )}
     </>
   );

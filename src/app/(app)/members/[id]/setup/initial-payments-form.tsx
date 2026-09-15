@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field } from "@/components/app/field";
+import { FormActions } from "@/components/app/form-actions";
 import { planInitialSetup } from "@/lib/allocate";
 import { formatMonthKeyShort } from "@/lib/dates";
 import { formatTaka } from "@/lib/money";
@@ -118,7 +119,7 @@ export function InitialPaymentsForm({
                   aria-pressed={on}
                   onClick={() => toggleMonth(monthKey)}
                   className={cn(
-                    "flex items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors",
+                    "flex min-h-12 items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors",
                     on
                       ? "border-primary bg-primary/10 text-primary font-medium"
                       : "hover:bg-muted",
@@ -143,7 +144,7 @@ export function InitialPaymentsForm({
             aria-pressed={feeTicked}
             onClick={() => setFeeTicked((v) => !v)}
             className={cn(
-              "flex w-full items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors",
+              "flex min-h-12 w-full items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors",
               feeTicked ? "border-primary bg-primary/10 text-primary font-medium" : "hover:bg-muted",
             )}
           >
@@ -209,14 +210,14 @@ export function InitialPaymentsForm({
         ) : null}
       </section>
 
-      <div className="flex flex-wrap gap-2 pt-1">
-        <Button type="button" onClick={onSubmit} disabled={submitting || !hasSomething}>
-          {submitting ? "Recording…" : "Record payments"}
-        </Button>
+      <FormActions>
         <Button type="button" variant="ghost" onClick={goToMember} disabled={submitting}>
           Skip for now
         </Button>
-      </div>
+        <Button type="button" onClick={onSubmit} disabled={submitting || !hasSomething}>
+          {submitting ? "Recording…" : "Record payments"}
+        </Button>
+      </FormActions>
     </div>
   );
 }

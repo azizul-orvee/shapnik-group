@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { PageHeader, EmptyState } from "@/components/app/page-header";
 import { MonthPicker } from "@/components/app/month-picker";
 import { StatCard } from "@/components/app/stat-card";
@@ -43,7 +42,7 @@ export default async function DuesPage({ searchParams }: PageProps<"/dues">) {
         description="Who has paid for the selected month, and who still owes."
       />
 
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <MonthPicker
           monthKey={monthKey}
           startMonthKey={settings.startMonthKey}
@@ -64,7 +63,7 @@ export default async function DuesPage({ searchParams }: PageProps<"/dues">) {
         ) : null}
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         <StatCard
           label="Paid"
           value={`${dues.paidCount}/${dues.dueCount}`}
@@ -86,25 +85,29 @@ export default async function DuesPage({ searchParams }: PageProps<"/dues">) {
         <StatCard label="Collected" value={formatTakaShort(dues.collected)} />
       </div>
 
-      <div className="my-4 flex gap-2">
+      <div className="bg-muted/80 my-4 flex rounded-full p-1">
         {[
           { label: "All", value: "all" },
           {
             label: dues.isFuture
-              ? `Not due yet (${dues.notDueYetCount})`
+              ? `Not due (${dues.notDueYetCount})`
               : `Pending (${dues.pendingCount})`,
             value: "pending",
           },
           { label: `Paid (${dues.paidCount})`, value: "paid" },
         ].map((tab) => (
-          <Button
+          <Link
             key={tab.value}
-            asChild
-            size="sm"
-            variant={showOnly === tab.value ? "default" : "outline"}
+            href={`/dues?month=${monthKey}&show=${tab.value}`}
+            className={`flex min-h-10 flex-1 items-center justify-center rounded-full px-2 text-center text-xs font-medium sm:text-sm ${
+              showOnly === tab.value
+                ? "bg-card text-foreground shadow-xs"
+                : "text-muted-foreground"
+            }`}
+            aria-current={showOnly === tab.value ? "page" : undefined}
           >
-            <Link href={`/dues?month=${monthKey}&show=${tab.value}`}>{tab.label}</Link>
-          </Button>
+            {tab.label}
+          </Link>
         ))}
       </div>
 

@@ -11,16 +11,20 @@ export function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-5 flex flex-wrap items-start justify-between gap-3 sm:mb-6">
+    <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
       <div className="min-w-0">
-        <h1 className="font-heading text-2xl font-semibold tracking-tight sm:text-[1.75rem]">
+        <h1 className="font-heading text-[1.65rem] leading-tight font-semibold tracking-tight sm:text-[1.75rem]">
           {title}
         </h1>
         {description ? (
-          <p className="text-muted-foreground mt-1 text-sm">{description}</p>
+          <p className="text-muted-foreground mt-1 text-sm leading-snug">{description}</p>
         ) : null}
       </div>
-      {action ? <div className="flex shrink-0 flex-wrap gap-2">{action}</div> : null}
+      {action ? (
+        <div className="flex w-full gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:w-auto sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden [&_[data-slot=button]]:shrink-0">
+          {action}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -37,7 +41,7 @@ export function EmptyState({
   icon?: typeof Inbox;
 }) {
   return (
-    <div className="border-border/70 bg-card/40 rounded-2xl border border-dashed p-10 text-center">
+    <div className="border-border/70 bg-card/40 rounded-2xl border border-dashed p-8 text-center sm:p-10">
       <span className="bg-muted text-muted-foreground mx-auto mb-3 flex size-11 items-center justify-center rounded-full">
         <Icon className="size-5" />
       </span>

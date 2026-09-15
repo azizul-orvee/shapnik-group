@@ -298,6 +298,25 @@
   [data-slot="button"][data-variant="default"] {
     box-shadow: var(--elev-xs);
   }
+
+  /* Phone: 44px tap targets for the common controls. Desktop sizes stay as-is. */
+  @media (max-width: 767px) {
+    [data-slot="input"],
+    [data-slot="select-trigger"] {
+      min-height: 2.75rem;
+    }
+    [data-slot="button"][data-size="default"] {
+      min-height: 2.75rem;
+      padding-inline: 1rem;
+    }
+    [data-slot="button"][data-size="sm"] {
+      min-height: 2.25rem;
+    }
+    [data-slot="button"][data-size="icon"] {
+      min-height: 2.5rem;
+      min-width: 2.5rem;
+    }
+  }
 }
 
 @utility bg-brand-gradient {
@@ -319,8 +338,10 @@
 }
 
 @utility card-lift {
-  &:hover {
-    box-shadow: var(--elev-lg);
-    transform: translateY(-2px);
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      box-shadow: var(--elev-lg);
+      transform: translateY(-2px);
+    }
   }
 }

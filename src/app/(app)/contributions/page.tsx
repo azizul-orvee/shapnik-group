@@ -11,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PageHeader, EmptyState } from "@/components/app/page-header";
+import { DesktopTable, MobileList } from "@/components/app/mobile-list";
 import { MonthPicker } from "@/components/app/month-picker";
 import { StatCard } from "@/components/app/stat-card";
 import { requireOrgReader } from "@/lib/session";
@@ -53,7 +54,7 @@ export default async function ContributionsPage({ searchParams }: PageProps<"/co
         }
       />
 
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-4">
         <MonthPicker
           monthKey={monthKey}
           startMonthKey={settings.startMonthKey}
@@ -61,7 +62,7 @@ export default async function ContributionsPage({ searchParams }: PageProps<"/co
         />
       </div>
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-2">
+      <div className="mb-4 grid grid-cols-2 gap-2 sm:gap-3">
         <StatCard label="Payments recorded" value={String(contributions.length)} />
         <StatCard
           label={`Collected for ${formatMonthKey(monthKey)}`}
@@ -82,46 +83,37 @@ export default async function ContributionsPage({ searchParams }: PageProps<"/co
           }
         />
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Member</TableHead>
-                <TableHead className="hidden sm:table-cell">Covers</TableHead>
-                <TableHead className="hidden md:table-cell">Received</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-                {writable ? <TableHead className="w-12" /> : null}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {contributions.map((contribution) => (
-                <TableRow key={contribution.id}>
-                  <TableCell>
+        <>
+          <MobileList>
+            {contributions.map((contribution) => (
+              <li key={contribution.id} className="px-4 py-3.5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
                     <Link
                       href={`/members/${contribution.member.id}`}
                       className="font-medium underline-offset-4 hover:underline"
                     >
                       {contribution.member.name}
                     </Link>
-                    <span className="text-muted-foreground block font-mono text-xs">
+                    <p className="text-muted-foreground mt-0.5 font-mono text-xs">
                       {contribution.member.memberId}
-                    </span>
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    <CoversLabel
-                      type={contribution.type}
-                      paidForMonth={contribution.paidForMonth}
-                      paidForYear={contribution.paidForYear}
-                    />
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {formatDate(contribution.paidOnDate)}
-                  </TableCell>
-                  <TableCell className="text-right font-medium tabular-nums">
-                    {formatTakaShort(contribution.amount)}
-                  </TableCell>
-                  {writable ? (
-                    <TableCell className="text-right">
+                    </p>
+                    <div className="mt-1.5 text-sm">
+                      <CoversLabel
+                        type={contribution.type}
+                        paidForMonth={contribution.paidForMonth}
+                        paidForYear={contribution.paidForYear}
+                      />
+                    </div>
+                    <p className="text-muted-foreground mt-0.5 text-xs">
+                      Received {formatDate(contribution.paidOnDate)}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    <p className="font-heading text-base font-semibold tabular-nums">
+                      {formatTakaShort(contribution.amount)}
+                    </p>
+                    {writable ? (
                       <DeleteContributionButton
                         contributionId={contribution.id}
                         label={`${contribution.member.name} — ${
@@ -130,13 +122,66 @@ export default async function ContributionsPage({ searchParams }: PageProps<"/co
                             : "one-time fee"
                         }`}
                       />
-                    </TableCell>
-                  ) : null}
+                    ) : null}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </MobileList>
+          <DesktopTable>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Member</TableHead>
+                  <TableHead>Covers</TableHead>
+                  <TableHead>Received</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                  {writable ? <TableHead className="w-12" /> : null}
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {contributions.map((contribution) => (
+                  <TableRow key={contribution.id}>
+                    <TableCell>
+                      <Link
+                        href={`/members/${contribution.member.id}`}
+                        className="font-medium underline-offset-4 hover:underline"
+                      >
+                        {contribution.member.name}
+                      </Link>
+                      <span className="text-muted-foreground block font-mono text-xs">
+                        {contribution.member.memberId}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <CoversLabel
+                        type={contribution.type}
+                        paidForMonth={contribution.paidForMonth}
+                        paidForYear={contribution.paidForYear}
+                      />
+                    </TableCell>
+                    <TableCell>{formatDate(contribution.paidOnDate)}</TableCell>
+                    <TableCell className="text-right font-medium tabular-nums">
+                      {formatTakaShort(contribution.amount)}
+                    </TableCell>
+                    {writable ? (
+                      <TableCell className="text-right">
+                        <DeleteContributionButton
+                          contributionId={contribution.id}
+                          label={`${contribution.member.name} — ${
+                            contribution.paidForMonth
+                              ? formatMonthKey(dateToMonthKey(contribution.paidForMonth))
+                              : "one-time fee"
+                          }`}
+                        />
+                      </TableCell>
+                    ) : null}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </DesktopTable>
+        </>
       )}
     </>
   );
