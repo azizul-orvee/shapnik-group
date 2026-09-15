@@ -8,6 +8,9 @@ Read this once, then follow `AGENTS.md` for the rules you must not break.
 - **This file** — what the app is, how it is built, what has been decided and why,
   and where the sharp edges are.
 
+Every change keeps all three current, in the same piece of work — see
+`AGENTS.md` → Docs.
+
 ---
 
 ## 1. What this is
@@ -185,7 +188,8 @@ src/
                     then the fee. Both pure and client-safe, so the preview the
                     admin approves and the rows the server writes come from the
                     same call.
-    pdf-format.ts   pdfAmount / pdfDate / pdfText (ASCII-folds typographic chars)
+    pdf-format.ts   pdfAmount / pdfDate / pdfIssuedOn / pdfText
+                    (ASCII-folds typographic chars; issue dates are Asia/Dhaka)
     utils.ts        shadcn cn()
 
   server/           ── all DB access ──
@@ -208,7 +212,7 @@ src/
 
   components/
     app/            App-specific UI (see §5)
-    pdf/            @react-pdf documents + shared styles
+    pdf/            @react-pdf documents, letterhead + logo raster, shared styles
     ui/             shadcn primitives — regenerate, don't hand-edit
 ```
 
@@ -280,7 +284,11 @@ join-date field), and `createMember()` auto-settles every fully-elapsed past yea
 (2025) as paid in full in that same transaction.
 
 The admin records `name`, `memberId`, `phone`, `nationalId`, `nomineeName` and
-`nomineeNationalId` — all required — plus an optional `nomineePhone`.
+`nomineeNationalId` — all required — plus an optional `nomineePhone`. A phone
+needs at least 10 digits and may start with `+` and contain spaces, e.g.
+`+880 1712 345678` (`PHONE_PATTERN` in `validation.ts`; repeated spaces are
+collapsed). Phone inputs use `inputMode="tel"` so the mobile keypad has `+`, and
+`tel:` links strip the spaces.
 
 ⚠️ **`nationalId` is a credential.** It is the member's initial password, so it
 must never reach anyone who cannot already act for them. `redactMember()` masks
@@ -416,6 +424,7 @@ Rules that are load-bearing:
 | `MonthPicker` | `?month=` stepper bounded by the window |
 | `StatCard`, `PageHeader`, `EmptyState`, `Field` | layout primitives; `StatCard` tones: default / positive / negative / brand |
 | `BrandMark` | the society logo (`public/logo.svg`) on a white badge (header, login); favicon is `src/app/icon.svg` + `apple-icon.png` |
+| PDF letterhead | "Shapnik Group" + logo raster; member codes print as `M-03` |
 | `ThemeToggle` | header light/dark switch; persists `localStorage.theme` |
 
 ### Design system
@@ -472,7 +481,13 @@ wrong produces a wall of resolver type errors.
 
 8. **PDFs drop typographic characters.** Standard Helvetica has no `৳`, em-dash or
    curly quotes. PDFs print `BDT` and run text through `pdfText()`. Bangla member
-   names will **not** render in PDFs until a Unicode font is embedded.
+   names will **not** render in PDFs until a Unicode font is embedded. The
+   letterhead uses a PNG of the logo (`src/components/pdf/assets/logo.png`)
+   because `@react-pdf/renderer` cannot embed `public/logo.svg`. Keep that PNG
+   in the Vercel trace via `outputFileTracingIncludes` in `next.config.ts`.
+   Member statements are a bank-style ledger (running balance, closing band)
+   branded **Shapnik Group**; member codes print as `M-03`. Chrome is brand teal,
+   never the viz palette.
 
 9. **Client importing `server-only` `years.ts`.** Contribution forms need
    `planForMonthKey` — it lives in `src/lib/dates.ts`. Importing `years.ts` from a
@@ -617,6 +632,8 @@ part of `dev`/`build`. If they look stale: `npx next typegen`.
 
 Expect a handful of lint **warnings** (React Compiler declining to memoize RHF's
 `watch()`, including the year form). Zero errors is the bar.
+
+Update the docs for what you changed (`AGENTS.md` → Docs).
 
 Then stop and **ask the owner before any `git commit` or `git push`** — no AI
 agent commits or pushes without their explicit yes, every time. See `AGENTS.md`

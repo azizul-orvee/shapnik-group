@@ -1,27 +1,31 @@
 import { Document, Page, Text, View } from "@react-pdf/renderer";
+import { PDF_BRAND_NAME, PdfFooter, PdfLetterhead } from "./letterhead";
 import { styles } from "./styles";
-import { pdfAmount, pdfDate, pdfText } from "@/lib/pdf-format";
+import { pdfAmount, pdfIssuedOn } from "@/lib/pdf-format";
 import { formatMonthKeyShort } from "@/lib/dates";
 import type { AnnualReport } from "@/server/reports";
 
 export function AnnualReportDocument({ report }: { report: AnnualReport }) {
+  const issuedOn = pdfIssuedOn(report.generatedAt);
+
   return (
     <Document
-      title={`Annual fund report ${report.year} — ${report.organization.name}`}
-      author={report.organization.name}
+      title={`Annual fund report ${report.year} - ${PDF_BRAND_NAME}`}
+      author={PDF_BRAND_NAME}
       subject="Annual fund report"
+      creator={PDF_BRAND_NAME}
     >
       <Page size="A4" style={styles.page}>
-        <View>
-          <Text style={styles.orgName}>{pdfText(report.organization.name)}</Text>
-          <Text style={styles.docTitle}>
-            Annual Fund Report for the year ended 31 December {report.year}
-          </Text>
-          <Text style={styles.docTitle}>
-            Prepared for submission to the Department of Cooperatives
-          </Text>
-        </View>
-        <View style={styles.headerRule} />
+        <PdfLetterhead
+          documentTitle="Annual fund report"
+          documentRef={`Year ended 31 December ${report.year}`}
+          issuedOn={issuedOn}
+        />
+
+        <Text style={[styles.attestation, { marginTop: 0 }]}>
+          Prepared for submission to the Department of Cooperatives. Receipts only
+          - this society does not record spending in the app.
+        </Text>
 
         <Text style={styles.sectionTitle}>Statement of fund</Text>
         <View>
@@ -41,7 +45,7 @@ export function AnnualReportDocument({ report }: { report: AnnualReport }) {
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Membership</Text>
+        <Text style={[styles.sectionTitle, { marginTop: 16 }]}>Membership</Text>
         <View>
           <View style={styles.summaryRow}>
             <Text>Total members</Text>
@@ -53,7 +57,7 @@ export function AnnualReportDocument({ report }: { report: AnnualReport }) {
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Monthly contributions</Text>
+        <Text style={[styles.sectionTitle, { marginTop: 16 }]}>Monthly contributions</Text>
         <View style={styles.table}>
           <View style={styles.tr}>
             <Text style={[styles.th, { width: "40%" }]}>Month</Text>
@@ -63,7 +67,7 @@ export function AnnualReportDocument({ report }: { report: AnnualReport }) {
           {report.months.map((month, index) => (
             <View
               key={month.monthKey}
-              style={index === report.months.length - 1 ? styles.trLast : styles.tr}
+              style={index === report.months.length - 1 ? styles.trLast : index % 2 === 1 ? styles.trAlt : styles.tr}
               wrap={false}
             >
               <Text style={[styles.td, { width: "40%" }]}>
@@ -77,27 +81,27 @@ export function AnnualReportDocument({ report }: { report: AnnualReport }) {
           ))}
         </View>
 
-        <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>Total collected during the year</Text>
-          <Text style={styles.totalValue}>{pdfAmount(report.totalCollected)}</Text>
+        <View style={styles.closing} wrap={false}>
+          <Text style={styles.closingLabel}>Total collected during the year</Text>
+          <Text style={styles.closingValue}>{pdfAmount(report.totalCollected)}</Text>
         </View>
 
-        <View style={styles.signatures}>
+        <View style={styles.signatures} wrap={false}>
           <View style={styles.signatureBlock}>
             <Text style={styles.signatureLabel}>Treasurer</Text>
+            <Text style={styles.signatureHint}>Certified true record</Text>
           </View>
           <View style={styles.signatureBlock}>
             <Text style={styles.signatureLabel}>Secretary</Text>
+            <Text style={styles.signatureHint}>Prepared</Text>
           </View>
           <View style={styles.signatureBlock}>
             <Text style={styles.signatureLabel}>President</Text>
+            <Text style={styles.signatureHint}>On behalf of the society</Text>
           </View>
         </View>
 
-        <View style={styles.footer} fixed>
-          <Text>Generated {pdfDate(report.generatedAt)}</Text>
-          <Text render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
-        </View>
+        <PdfFooter />
       </Page>
     </Document>
   );

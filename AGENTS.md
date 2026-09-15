@@ -33,6 +33,24 @@ ahead only on a clear yes.
   pushing.** They need the same confirmation.
 - Reading the repo needs no permission: `git status`, `git diff`, `git log`.
 
+## Docs: update them with every change
+
+**Whenever an AI agent changes the app, it updates the docs in the same piece of
+work — without being asked.** The next session starts from these files, so they
+must describe the app as it is now, not as it was.
+
+- **Before reporting work as done**, check what the change affects and update it:
+  - `AGENTS.md` — rules and conventions an agent must follow.
+  - `HANDOFF.md` — architecture, data model, routes, decisions, bugs that bit
+    (§7) and dead code (§8).
+  - `README.md` — what the society's admin and members see, and setup.
+- **Fix what the change made wrong.** Rewrite or delete outdated lines; don't
+  just add a new one beside them.
+- **Say which docs you updated** when you report the work, or that none needed
+  to change.
+- Doc changes follow the Git rule above: they go in with the change, and nothing
+  is committed or pushed without the owner's yes.
+
 ## What every member owes
 
 Rates live on `YearPlan` (one row per calendar year: `monthlyAmount`, `oneTimeFee`,
@@ -127,13 +145,16 @@ do not reintroduce them.
 - `User.email` still exists but nothing signs in with it.
 
 An admin registers a member with **name, member ID, phone, NID, nominee name and
-nominee NID**; nominee phone is the only optional field. There is **no join-date
+nominee NID**; nominee phone is the only optional field. Every phone needs at
+least 10 digits and may start with `+` and contain spaces (`+880 1712 345678`) —
+`PHONE_PATTERN` in `src/lib/validation.ts`. There is **no join-date
 field** — every member joins at the society's opening month
 (`Organization.startMonth`). Member IDs are stored **uppercased**, and IDs that
 differ only by an `M`/`M-` prefix or leading zeros are the **same ID** — `M-01`,
 `M01`, `01` and `1` cannot coexist. Check clashes with `memberIdKey()` from
 `src/lib/member-id.ts`, never by comparing strings; the database index only
 catches exact repeats. Sign-in still matches the ID exactly as stored.
+Print form is `formatMemberCode()` (`M-03`, never `M-003`) — PDFs use that.
 `createMember()` creates their login in the same
 transaction and, in that same transaction, **auto-settles every fully-elapsed
 past year** (2025) as paid in full — each in-season month plus the year's fee,
@@ -256,6 +277,9 @@ CVD-validated `--viz-*` palette. Use the `brand`/`primary` tokens for chrome and
   (`public/logo.svg`) on a small white badge, so the multicolour artwork stays
   legible in both themes. Header and login use it. The browser favicon is the
   same logo via `src/app/icon.svg`, with `src/app/apple-icon.png` for iOS.
+  Official PDFs cannot embed SVG, so they use the raster at
+  `src/components/pdf/assets/logo.png` on the same white badge. The letterhead
+  name is **Shapnik Group**.
 
 ## Theming (light / dark)
 
@@ -303,5 +327,6 @@ npm run typecheck && npm run lint && npm run build
 Route types (`PageProps`, `LayoutProps`) come from `next typegen`, which runs as
 part of `dev`/`build`. If they look stale, run `npx next typegen`.
 
-Then report what changed and **ask before committing or pushing** — see
-"Git: never commit or push without asking" above.
+Then **update the docs** for what you changed (see "Docs" above), report what
+changed, and **ask before committing or pushing** — see "Git: never commit or
+push without asking" above.

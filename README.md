@@ -35,7 +35,8 @@ The data model is multi-tenant from day one. Every row carries an `organizationI
 even though only one society exists today.
 
 Working on this with an AI agent? `HANDOFF.md` is the full technical handoff;
-`AGENTS.md` is the short list of conventions.
+`AGENTS.md` is the short list of conventions. Agents update these docs with
+every change they make, and never commit or push without your confirmation.
 
 ## Recording payments
 
@@ -180,11 +181,12 @@ login.
 ## Members
 
 The admin registers each member with their name, member ID, phone, NID, nominee
-name and nominee NID (nominee phone optional). Their login is created
-automatically. Correcting a member's NID or ID also moves their login, so the
-details on screen are always the ones that work. Member IDs are stored
-uppercased, and `M-01`, `M01`, `01` and `1` count as the same ID, so only one of
-them can exist.
+name and nominee NID (nominee phone optional). A phone number needs at least 10
+digits and may include a leading + and spaces, e.g. +880 1712 345678. Their
+login is created automatically. Correcting a member's NID or ID also moves their
+login, so the details on screen are always the ones that work. Member IDs are
+stored uppercased, and `M-01`, `M01`, `01` and `1` count as the same ID, so only
+one of them can exist.
 
 There is no join-date field — every member joins at the society's opening month.
 On creation, all fully-elapsed past years (2025) are recorded as paid in full,
@@ -263,14 +265,18 @@ plus one month for every month elapsed since they joined.
 
 ## Reports
 
-- **Per-member statement** — `/api/reports/members/[id]/pdf`
+- **Per-member statement** — `/api/reports/members/[id]/pdf`. Letterhead reads
+  **Shapnik Group**, with the member's name and `M-03`-style ID, a lifetime
+  total, and a ledger (particulars, type, amount, running balance). Members can
+  only download their own.
 - **Monthly collection summary** — `/reports/monthly?month=YYYY-MM`
 - **Annual fund report** — `/reports/annual?year=YYYY`, PDF at
   `/api/reports/annual/[year]/pdf`, laid out for filing with the Department of
   Cooperatives. Receipts only, since the app does not track spending.
 
 PDFs use the standard Helvetica fonts, which have no glyph for `৳`, so printed
-documents show `BDT` while the screen shows the Taka sign.
+documents show `BDT` while the screen shows the Taka sign. The issue date on
+the letterhead is Bangladesh time (`Asia/Dhaka`).
 
 ## Deploying to Vercel
 

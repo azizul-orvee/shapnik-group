@@ -316,7 +316,7 @@ export async function deleteMember(
   });
 }
 
-/** Next free sequential member code, e.g. `M-031`. */
+/** Next free sequential member code, e.g. `M-03`. */
 export async function suggestMemberCode(organizationId: string): Promise<string> {
   const members = await prisma.member.findMany({
     where: { organizationId },
@@ -326,5 +326,5 @@ export async function suggestMemberCode(organizationId: string): Promise<string>
     const digits = /(\d+)\s*$/.exec(memberId)?.[1];
     return digits ? Math.max(max, Number(digits)) : max;
   }, 0);
-  return `M-${String(highest + 1).padStart(3, "0")}`;
+  return `M-${String(highest + 1).padStart(2, "0")}`;
 }

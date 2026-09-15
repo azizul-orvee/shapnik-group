@@ -1,3 +1,5 @@
+import { DHAKA_TIME_ZONE } from "@/lib/dates";
+
 /**
  * The standard PDF fonts have no glyph for ৳, so printed documents use the
  * ISO currency code instead. On-screen we keep the Taka sign.
@@ -21,11 +23,22 @@ export function pdfText(value: string): string {
     .replace(/\u2026/g, "...");
 }
 
+/** Payment dates are stored as UTC calendar dates. */
 export function pdfDate(date: Date): string {
   return date.toLocaleDateString("en-GB", {
     day: "2-digit",
     month: "short",
     year: "numeric",
     timeZone: "UTC",
+  });
+}
+
+/** Issue stamp on a statement — the same Bangladesh date every viewer sees. */
+export function pdfIssuedOn(date: Date): string {
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: DHAKA_TIME_ZONE,
   });
 }
