@@ -11,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PageHeader } from "@/components/app/page-header";
+import { BRAND_NAME } from "@/lib/brand";
 import { DesktopTable, MobileList, MobileListItem } from "@/components/app/mobile-list";
 import { MonthPicker } from "@/components/app/month-picker";
 import { StatCard } from "@/components/app/stat-card";
@@ -39,7 +40,7 @@ export default async function MonthlyReportPage({ searchParams }: PageProps<"/re
     <>
       <PageHeader
         title="Monthly collection summary"
-        description={summary.organization.name}
+        description={BRAND_NAME}
         action={
           <Button asChild variant="outline" size="sm">
             <Link href="/reports">All reports</Link>

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { ShieldCheck, TrendingUp, Wallet } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { BrandMark } from "@/components/app/brand-mark";
+import { BRAND_NAME } from "@/lib/brand";
 import { getAppSession } from "@/lib/session";
 import { LoginForm } from "./login-form";
 
@@ -35,11 +36,11 @@ export default async function LoginPage() {
           <BrandMark size={52} />
           <div>
             <h1 className="font-heading text-4xl font-bold tracking-tight">
-              Shapnik
+              {BRAND_NAME}
             </h1>
             <p className="text-muted-foreground mt-2 max-w-sm text-[15px]">
-              Savings management for your cooperative society — collections,
-              progress and reports, without the ledger book.
+              Savings management for {BRAND_NAME} — collections, progress and
+              reports, without the ledger book.
             </p>
           </div>
           <ul className="space-y-3">
@@ -59,16 +60,16 @@ export default async function LoginPage() {
             <div className="mb-6 flex flex-col items-center text-center lg:hidden">
               <BrandMark size={48} />
               <h1 className="font-heading mt-3 text-2xl font-bold tracking-tight">
-                Shapnik
+                {BRAND_NAME}
               </h1>
               <p className="text-muted-foreground mt-1 text-sm">
-                Sign in to see your savings with the society.
+                Sign in to see your savings with {BRAND_NAME}.
               </p>
             </div>
             <div className="mb-5 hidden lg:block">
               <h2 className="font-heading text-xl font-semibold">Welcome back</h2>
               <p className="text-muted-foreground mt-1 text-sm">
-                Sign in to continue to your society.
+                Sign in to continue to {BRAND_NAME}.
               </p>
             </div>
             <LoginForm />

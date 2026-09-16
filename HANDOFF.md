@@ -15,8 +15,8 @@ Every change keeps all three current, in the same piece of work — see
 
 ## 1. What this is
 
-A savings-management app for a Bangladeshi cooperative society (*shomobay
-shomiti*) of ~30 members. The treasurer records payments; the app tracks who has
+A savings-management app for **Shapnik Group**, a Bangladeshi cooperative of
+~30 members. The treasurer records payments; the app tracks who has
 paid, who is behind, and produces the reports the Department of Cooperatives asks
 for.
 
@@ -382,8 +382,9 @@ works normally.
 sidebar above. The bar holds at most four primary destinations plus **More**;
 the rest (Fund, Reports, Years, Accounts) open in a bottom sheet. Members see
 Home and Profile (Profile is a read-only copy of their Member row). People and payment lists are tappable cards on a phone
-(`MobileList`) and tables from `md` up (`DesktopTable`). The app header shows
-today's date in **Dhaka time** for every role (`formatDhakaToday()` in
+(`MobileList`) and tables from `md` up (`DesktopTable`). Chrome and PDFs show
+**Shapnik Group** (`BRAND_NAME` in `src/lib/brand.ts`), not `Organization.name`.
+The app header shows today's date in **Dhaka time** for every role (`formatDhakaToday()` in
 `(app)/layout.tsx`); the theme toggle is in the header from `md` up, and in the
 account menu / More sheet on a phone. The root viewport uses `viewportFit: "cover"`
 so the chrome respects the iOS safe area.

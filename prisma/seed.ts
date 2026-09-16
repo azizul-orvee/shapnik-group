@@ -11,7 +11,7 @@ const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString }, schema ? { schema } : undefined),
 });
 
-const ORG_NAME = process.env.SEED_ORG_NAME ?? "Shapnik Shomobay Shomiti";
+const ORG_NAME = process.env.SEED_ORG_NAME ?? "Shapnik Group";
 const ADMIN_LOGIN_ID = process.env.ADMIN_LOGIN_ID ?? "1";
 const ADMIN_NID = process.env.ADMIN_NID ?? "123456789876";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "change-me";

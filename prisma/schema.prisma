@@ -1,4 +1,4 @@
-// Shomobay Shomiti — savings-only cooperative society management.
+// Shapnik Group — savings-only cooperative society management.
 // Multi-tenant from day one: every domain row carries organizationId.
 
 generator client {

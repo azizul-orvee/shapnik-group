@@ -19,10 +19,10 @@ const jakarta = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: {
-    default: "Shapnik",
-    template: "%s · Shapnik",
+    default: "Shapnik Group",
+    template: "%s · Shapnik Group",
   },
-  description: "Savings and fund management for a cooperative society.",
+  description: "Savings and fund management for Shapnik Group.",
 };
 
 export const viewport: Viewport = {

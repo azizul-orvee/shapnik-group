@@ -3,6 +3,7 @@ import { badRequest, handler, requireApiOrgReader } from "@/lib/api";
 import { buildAnnualReport } from "@/server/reports";
 import { getSocietySettings } from "@/server/progress";
 import { AnnualReportDocument } from "@/components/pdf/annual-report";
+import { BRAND_NAME } from "@/lib/brand";
 
 export const runtime = "nodejs";
 
@@ -21,7 +22,7 @@ export const GET = handler(async (_request: Request, { params }: Context) => {
 
   const report = await buildAnnualReport(session.organizationId, year);
   const buffer = await renderToBuffer(<AnnualReportDocument report={report} />);
-  const slug = report.organization.name.replace(/[^a-zA-Z0-9]+/g, "-").toLowerCase();
+  const slug = BRAND_NAME.replace(/[^a-zA-Z0-9]+/g, "-").toLowerCase();
 
   return new Response(new Uint8Array(buffer), {
     headers: {

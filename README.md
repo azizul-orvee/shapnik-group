@@ -1,6 +1,6 @@
-# Shapnik — Shomobay Shomiti management
+# Shapnik Group
 
-Savings and fund management for a Bangladeshi cooperative society (*shomobay shomiti*).
+Savings and fund management for Shapnik Group, a Bangladeshi cooperative.
 Members pay a monthly contribution, the treasurer records it, and the app keeps the
 cash book, the dues list and the reports the Department of Cooperatives asks for.
 
@@ -120,7 +120,8 @@ and 2026 collections up to today.
 | Member | `/login` | `M-003` + the NID the seed prints |
 
 The admin's credentials come from `ADMIN_LOGIN_ID`, `ADMIN_NID` and
-`ADMIN_PASSWORD` (plus `ADMIN_NAME`); the society name from `SEED_ORG_NAME`.
+`ADMIN_PASSWORD` (plus `ADMIN_NAME`). The on-screen name is **Shapnik Group**
+(`BRAND_NAME`); `SEED_ORG_NAME` is the organisation row, defaulting to the same.
 Every member has a login of their member ID plus their NID; the seed prints
 M-003's on completion. Real values live in `.env`, which is gitignored —
 `.env.example` ships placeholders.

@@ -1,10 +1,11 @@
 import { Image, Text, View } from "@react-pdf/renderer";
 import { styles } from "./styles";
 import { SOCIETY_LOGO_PNG } from "./logo";
+import { BRAND_NAME } from "@/lib/brand";
 import { pdfText } from "@/lib/pdf-format";
 
 /** Printed name on every official PDF, regardless of the organisation row. */
-export const PDF_BRAND_NAME = "Shapnik Group";
+export const PDF_BRAND_NAME = BRAND_NAME;
 
 export function PdfLetterhead({
   documentTitle,

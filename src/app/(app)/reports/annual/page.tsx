@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PageHeader } from "@/components/app/page-header";
+import { BRAND_NAME } from "@/lib/brand";
 import { DesktopTable, MobileList, MobileListItem } from "@/components/app/mobile-list";
 import { StatCard } from "@/components/app/stat-card";
 import { requireOrgReader } from "@/lib/session";
@@ -38,7 +39,7 @@ export default async function AnnualReportPage({ searchParams }: PageProps<"/rep
     <>
       <PageHeader
         title={`Annual fund report ${year}`}
-        description={report.organization.name}
+        description={BRAND_NAME}
         action={
           <Button asChild size="sm">
             <a href={`/api/reports/annual/${year}/pdf`}>

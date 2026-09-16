@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CalendarDays } from "lucide-react";
-import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
+import { BRAND_NAME } from "@/lib/brand";
 import { ROLE_LABELS } from "@/lib/rbac";
 import { navLinksFor } from "@/components/app/nav-links";
 import { BottomNav, SidebarNav } from "@/components/app/app-nav";
@@ -13,12 +13,6 @@ import { signOut } from "@/auth";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const session = await requireSession();
-  const [organization] = await Promise.all([
-    prisma.organization.findUnique({
-      where: { id: session.organizationId },
-      select: { name: true },
-    }),
-  ]);
 
   const links = navLinksFor(session.role);
   const today = formatDhakaToday();
@@ -36,7 +30,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
             <BrandMark size={36} className="shrink-0" />
             <span className="min-w-0">
               <span className="font-heading block truncate text-[13px] leading-tight font-semibold sm:text-sm">
-                {organization?.name ?? "Shapnik"}
+                {BRAND_NAME}
               </span>
               <span className="text-muted-foreground block text-[11px] leading-tight sm:text-xs">
                 {ROLE_LABELS[session.role]}

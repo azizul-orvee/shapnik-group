@@ -16,6 +16,7 @@ import { DesktopTable, MobileList } from "@/components/app/mobile-list";
 import { Meter, MeterLegend, ProgressRing } from "@/components/app/meter";
 import { MonthGrid, MonthGridLegend } from "@/components/app/month-grid";
 import { requireSession } from "@/lib/session";
+import { BRAND_NAME } from "@/lib/brand";
 import { formatTakaShort } from "@/lib/money";
 import { formatDate, formatMonthKey } from "@/lib/dates";
 import { buildMemberStatement } from "@/server/reports";
@@ -397,10 +398,10 @@ export default async function MyStatementPage({ searchParams }: PageProps<"/my-s
           behind or what anyone else has paid. */}
       <Card className="mt-4">
         <CardHeader>
-          <CardTitle className="text-base">The society in {year}</CardTitle>
+          <CardTitle className="text-base">{BRAND_NAME} in {year}</CardTitle>
           <CardDescription>
-            How {statement.organization.name} is doing overall. No individual
-            member&rsquo;s figures are shown here.
+            How {BRAND_NAME} is doing overall. No individual member&rsquo;s
+            figures are shown here.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-3">

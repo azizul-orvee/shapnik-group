@@ -14,7 +14,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 maths, decisions already made, and the bugs that have already bitten this
 codebase. This file is the short list of rules you must not break.
 
-Cooperative society (*shomobay shomiti*) savings management. Collections only:
+Shapnik Group savings management. Collections only:
 no loans, no interest, no payment gateway, and **no spending/expense tracking**.
 See `README.md` for setup.
 
@@ -281,8 +281,9 @@ CVD-validated `--viz-*` palette. Use the `brand`/`primary` tokens for chrome and
   legible in both themes. Header and login use it. The browser favicon is the
   same logo via `src/app/icon.svg`, with `src/app/apple-icon.png` for iOS.
   Official PDFs cannot embed SVG, so they use the raster at
-  `src/components/pdf/assets/logo.png` on the same white badge. The letterhead
-  name is **Shapnik Group**.
+  `src/components/pdf/assets/logo.png` on the same white badge. Chrome, login
+  and PDFs all print **Shapnik Group** from `BRAND_NAME` in `src/lib/brand.ts`
+  — never `Organization.name`.
 
 ## Theming (light / dark)
 
