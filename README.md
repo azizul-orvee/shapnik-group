@@ -296,6 +296,29 @@ the letterhead is Bangladesh time (`Asia/Dhaka`).
 `@react-pdf/renderer` and `pg` are listed in `serverExternalPackages` so they run
 as real Node modules rather than being bundled.
 
+## Database backup
+
+`.github/workflows/db-backup.yml` dumps the Neon database every night at
+21:00 UTC (03:00 in Dhaka). It runs `pg_dump` (custom format) and only reads the
+database. It needs a repository secret, `DATABASE_URL_UNPOOLED`: the **direct**
+Neon URL, whose host has no `-pooler`. pg_dump cannot run through PgBouncer.
+
+- **Finding a backup:** go to Actions → Database backup, open a run, and look
+  under Artifacts for `shapnik-db-YYYY-MM-DD`. Each one is kept for 90 days.
+  The date is the Dhaka date.
+- **Running one by hand:** go to Actions → Database backup → Run workflow.
+- **Inspecting a file:** unzip the artifact, then run
+  `pg_restore --list shapnik-YYYY-MM-DD.dump`.
+- **Restoring:** create a fresh Neon branch, copy its direct URL, then run:
+
+  ```bash
+  pg_restore --no-owner --no-privileges -d "<direct url>" shapnik-YYYY-MM-DD.dump
+  ```
+
+> **Never restore over production** unless you have taken a backup of production
+> first. Restore into a new branch, check it, and switch over only when you are
+> sure.
+
 ## Out of scope
 
 No loans, interest or repayment schedules. No payment gateway. No expense or

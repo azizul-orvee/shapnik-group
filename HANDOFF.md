@@ -674,6 +674,15 @@ against an empty schema: 1 organisation, 2 year plans, 1 admin, **0 members**.
 `@react-pdf/renderer` and `pg` are in `serverExternalPackages` (`next.config.ts`)
 so they run as real Node modules instead of being bundled. Keep them there.
 
+**Backups.** `.github/workflows/db-backup.yml` runs every night at 21:00 UTC
+(03:00 in Dhaka) and can also be started by hand. It runs `pg_dump` inside
+`postgres:18` against the `DATABASE_URL_UNPOOLED` secret, which must be the
+direct Neon URL. The job fails if the URL contains `-pooler`, and it fails if
+the dump is under 1 KB. Each dump is kept as a 90-day artifact. The workflow
+only reads the database, so keep it that way: never add a migrate, push or
+restore step. README → "Database backup" explains how to find, inspect and
+restore a dump.
+
 ---
 
 ## 11. If you change one thing, check these

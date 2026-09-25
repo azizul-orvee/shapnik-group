@@ -1,0 +1,69 @@
+# Nightly backup of the production Neon Postgres database.
+# Runs pg_dump over a direct (non-pooled) connection and keeps the dump as a
+# workflow artifact for 90 days. It only reads the database: nothing here
+# writes to it, migrates it or pushes a schema.
+name: Database backup
+
+on:
+  schedule:
+    - cron: "0 21 * * *" # 21:00 UTC = 03:00 in Dhaka
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  APP: shapnik
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check the database secret
+        env:
+          DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
+        run: |
+          if [ -z "$DATABASE_URL_UNPOOLED" ]; then
+            echo "::error::The DATABASE_URL_UNPOOLED secret is missing. Add it under Settings → Secrets and variables → Actions → New repository secret."
+            exit 1
+          fi
+          if [[ "$DATABASE_URL_UNPOOLED" == *-pooler* ]]; then
+            echo "::error::DATABASE_URL_UNPOOLED points at the Neon pooler (-pooler). pg_dump needs a direct connection, not PgBouncer — use the direct Neon URL (Connect → turn off Connection pooling)."
+            exit 1
+          fi
+
+      - name: Dump the database
+        env:
+          DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
+        run: |
+          STAMP="$(TZ=Asia/Dhaka date +%F)"
+          echo "STAMP=$STAMP" >> "$GITHUB_ENV"
+          mkdir -p backup
+          FILE="backup/${APP}-${STAMP}.dump"
+
+          # A newer pg_dump reads older servers, so this keeps working after
+          # Neon upgrades Postgres. The URL goes in via -e, never inline.
+          docker run --rm \
+            -e DATABASE_URL_UNPOOLED \
+            -e OUT="/backup/${APP}-${STAMP}.dump" \
+            -v "$PWD/backup:/backup" \
+            --user "$(id -u):$(id -g)" \
+            postgres:18 \
+            sh -c 'pg_dump "$DATABASE_URL_UNPOOLED" --format=custom --no-owner --no-privileges --file="$OUT"'
+
+          ls -lh backup
+
+          SIZE="$(stat -c %s "$FILE")"
+          if [ "$SIZE" -lt 1024 ]; then
+            echo "::error::$FILE is only $SIZE bytes — the dump failed quietly."
+            exit 1
+          fi
+
+      - name: Upload the backup
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.APP }}-db-${{ env.STAMP }}
+          path: backup/${{ env.APP }}-${{ env.STAMP }}.dump
+          retention-days: 90
+          if-no-files-found: error
