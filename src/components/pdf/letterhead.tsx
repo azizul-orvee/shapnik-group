@@ -1,6 +1,6 @@
 import { Image, Text, View } from "@react-pdf/renderer";
 import { styles } from "./styles";
-import { SOCIETY_LOGO_PNG } from "./logo";
+import { SOCIETY_LOGO_PNG, TREASURER_SIGNATURE_PNG } from "./logo";
 import { BRAND_NAME } from "@/lib/brand";
 import { pdfText } from "@/lib/pdf-format";
 
@@ -44,6 +44,24 @@ export function PdfFooter() {
     <View style={styles.footer} fixed>
       <Text>Confidential | {PDF_BRAND_NAME}</Text>
       <Text render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
+    </View>
+  );
+}
+
+/**
+ * The Treasurer's signature line, signed with the treasurer's handwritten
+ * signature. Every downloadable PDF closes with it; `styles.signatures` aligns
+ * to the bottom so it sits level with any unsigned lines beside it.
+ */
+export function PdfTreasurerSignature() {
+  return (
+    <View style={styles.signedColumn}>
+      {/* eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf Image has no alt; the Treasurer label sits below it */}
+      <Image src={{ data: TREASURER_SIGNATURE_PNG, format: "png" }} style={styles.signatureImage} />
+      <View style={styles.signedBlock}>
+        <Text style={styles.signatureLabel}>Treasurer</Text>
+        <Text style={styles.signatureHint}>Certified true record</Text>
+      </View>
     </View>
   );
 }

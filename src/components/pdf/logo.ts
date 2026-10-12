@@ -10,3 +10,12 @@ import { join } from "node:path";
 export const SOCIETY_LOGO_PNG = readFileSync(
   join(process.cwd(), "src/components/pdf/assets/logo.png"),
 );
+
+/**
+ * The treasurer's handwritten signature, ink on a transparent background,
+ * printed above the Treasurer line on the member statement. Same hoisting and
+ * tracing rules as the logo above.
+ */
+export const TREASURER_SIGNATURE_PNG = readFileSync(
+  join(process.cwd(), "src/components/pdf/assets/treasurer-signature.png"),
+);

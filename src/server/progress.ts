@@ -194,6 +194,13 @@ function buildProgress(
   };
 }
 
+/**
+ * The society's targets are always set for this many members, whatever the
+ * real headcount. Up to `Organization.memberLimit` (40) may join; members past
+ * 30 still owe their own dues, so collections can run past 100% of target.
+ */
+export const TARGET_MEMBER_COUNT = 30;
+
 /** Progress for every active member, plus the society totals they roll up to. */
 export async function getSocietyProgress(organizationId: string, year: number) {
   const { start, end } = yearBounds(year);
@@ -244,7 +251,8 @@ export async function getSocietyProgress(organizationId: string, year: number) {
 
   const monthlyCollected = rows.reduce((sum, r) => sum + r.monthlyPaid, 0);
   const oneTimeCollected = rows.reduce((sum, r) => sum + r.oneTimePaid, 0);
-  const totalTarget = rows.reduce((sum, r) => sum + r.totalTarget, 0);
+  // Fixed at TARGET_MEMBER_COUNT, not the headcount — see that constant.
+  const totalTarget = plan.annualTarget * TARGET_MEMBER_COUNT;
   const totalCollected = monthlyCollected + oneTimeCollected;
 
   return {
@@ -253,13 +261,15 @@ export async function getSocietyProgress(organizationId: string, year: number) {
     plan,
     rows,
     memberCount: rows.length,
+    targetMemberCount: TARGET_MEMBER_COUNT,
     monthlyCollected,
-    monthlyTarget: plan.monthlyTarget * rows.length,
+    monthlyTarget: plan.monthlyTarget * TARGET_MEMBER_COUNT,
     oneTimeCollected,
-    oneTimeTarget: plan.oneTimeFee * rows.length,
+    oneTimeTarget: plan.oneTimeFee * TARGET_MEMBER_COUNT,
     totalCollected,
     totalTarget,
-    completion: totalTarget === 0 ? 0 : Math.min(1, totalCollected / totalTarget),
+    /** 0–1+ of the society target. Not capped: past 30 members it can exceed 1. */
+    completion: totalTarget === 0 ? 0 : totalCollected / totalTarget,
     oneTimeSettled: rows.filter((r) => r.oneTimePaid >= plan.oneTimeFee).length,
     fullyPaid: rows.filter((r) => r.totalPaid >= r.totalTarget).length,
     behind: rows.filter((r) => !r.onTrack).length,

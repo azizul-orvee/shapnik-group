@@ -20,6 +20,7 @@ import { requireOrgReader } from "@/lib/session";
 import { canWrite } from "@/lib/rbac";
 import { formatTakaShort } from "@/lib/money";
 import { dateToMonthKey, formatDate, formatMonthKey } from "@/lib/dates";
+import { EditContributionLink } from "../../contributions/edit-contribution-link";
 import { CoversLabel } from "@/components/app/covers-label";
 import { findMemberWithContributions } from "@/server/members";
 import { getYearObligation } from "@/server/contributions";
@@ -28,6 +29,12 @@ import { DeleteMemberDialog } from "./member-actions";
 import { LumpSumDialog, type YearObligationView } from "./lump-sum-dialog";
 
 export const metadata: Metadata = { title: "Member" };
+
+function historyLabel(contribution: { paidForMonth: Date | null; paidForYear: number }) {
+  return contribution.paidForMonth
+    ? formatMonthKey(dateToMonthKey(contribution.paidForMonth))
+    : `${contribution.paidForYear} one-time fee`;
+}
 
 function maskId(value: string) {
   return value.length <= 4 ? "••••" : `${"•".repeat(value.length - 4)}${value.slice(-4)}`;
@@ -231,9 +238,18 @@ export default async function MemberDetailPage({ params }: PageProps<"/members/[
                           : ""}
                       </span>
                     </div>
-                    <span className="font-heading shrink-0 text-base font-semibold tabular-nums">
-                      {formatTakaShort(contribution.amount)}
-                    </span>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <span className="font-heading text-base font-semibold tabular-nums">
+                        {formatTakaShort(contribution.amount)}
+                      </span>
+                      {writable ? (
+                        <EditContributionLink
+                          contributionId={contribution.id}
+                          label={historyLabel(contribution)}
+                          back={`/members/${member.id}`}
+                        />
+                      ) : null}
+                    </div>
                   </li>
                 ))}
               </MobileList>
@@ -245,6 +261,7 @@ export default async function MemberDetailPage({ params }: PageProps<"/members/[
                       <TableHead>Paid on</TableHead>
                       <TableHead>Recorded by</TableHead>
                       <TableHead className="text-right">Amount</TableHead>
+                      {writable ? <TableHead className="w-12" /> : null}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -264,6 +281,15 @@ export default async function MemberDetailPage({ params }: PageProps<"/members/[
                         <TableCell className="text-right font-medium tabular-nums">
                           {formatTakaShort(contribution.amount)}
                         </TableCell>
+                        {writable ? (
+                          <TableCell className="text-right">
+                            <EditContributionLink
+                              contributionId={contribution.id}
+                              label={historyLabel(contribution)}
+                              back={`/members/${member.id}`}
+                            />
+                          </TableCell>
+                        ) : null}
                       </TableRow>
                     ))}
                   </TableBody>

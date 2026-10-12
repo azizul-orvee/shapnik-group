@@ -174,6 +174,7 @@ export function LumpSumDialog({
             <Input
               id="lump-date"
               type="date"
+              max={dhakaDateKey()}
               value={paidOnDate}
               onChange={(event) => setPaidOnDate(event.target.value)}
             />

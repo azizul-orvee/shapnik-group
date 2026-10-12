@@ -274,11 +274,27 @@ export const styles = StyleSheet.create({
   signatures: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "flex-end",
     marginTop: 36,
     gap: 16,
   },
   signatureBlock: {
     width: "30%",
+    borderTopWidth: 0.75,
+    borderTopColor: ink.text,
+    paddingTop: 6,
+  },
+  // A signature line with the signer's image above it. `signatures` aligns its
+  // children to the bottom so this line sits level with the unsigned ones.
+  signedColumn: {
+    width: "30%",
+  },
+  signatureImage: {
+    height: 34,
+    objectFit: "contain",
+    marginBottom: 2,
+  },
+  signedBlock: {
     borderTopWidth: 0.75,
     borderTopColor: ink.text,
     paddingTop: 6,

@@ -472,6 +472,20 @@ export async function recordInitialSetup(
   };
 }
 
+/** One payment, for the edit screen. Null if it is not in this organisation. */
+export async function getContribution(organizationId: string, id: string) {
+  return prisma.contribution.findFirst({
+    where: { id, organizationId },
+    include: CONTRIBUTION_INCLUDE,
+  });
+}
+
+/**
+ * Corrects a payment recorded wrongly — amount, received date, the month or
+ * year it covers, or the note. Member and type are fixed: a payment logged
+ * against the wrong member or type is removed and logged again. The linked
+ * cash-book row moves with it in the same transaction.
+ */
 export async function updateContribution(
   organizationId: string,
   id: string,
@@ -482,6 +496,19 @@ export async function updateContribution(
     include: { member: { select: { name: true, memberId: true } } },
   });
   if (!existing) throw notFound("Contribution not found");
+
+  // A month belongs only to a monthly payment; a fee instalment covers a year.
+  if (existing.type === "ONE_TIME" && input.paidForMonth) {
+    throw badRequest("A one-time fee payment does not cover a month");
+  }
+  if (existing.type === "MONTHLY" && input.paidForYear !== undefined && !input.paidForMonth) {
+    if (input.paidForYear !== existing.paidForYear) {
+      throw badRequest("Change the month instead — a monthly payment's year follows its month");
+    }
+  }
+  if (existing.type === "ONE_TIME" && input.paidForYear !== undefined) {
+    await requireYearPlan(organizationId, input.paidForYear);
+  }
 
   if (input.paidForMonth) await assertMonthCovered(organizationId, input.paidForMonth);
   const paidForMonth = input.paidForMonth

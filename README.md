@@ -56,6 +56,15 @@ app is built to make that fast.
 - **Part paid** is its own state. A month settled for less than the rate is
   recorded but still shown as owed, and topping it up later raises that month
   rather than adding a second row.
+- **Past dates.** Every form that records money — Log a payment, Collect from N
+  pending, Lump sum and the new-member setup window — has a **Received on**
+  date, defaulting to today in Dhaka. Pick an earlier day to enter an old
+  payment as it really happened; a future day is refused. Only the one-tap
+  **Log ৳X** button always uses today.
+- **Correcting a mistake.** Every payment has an **Edit** (pencil) button on
+  Collections and on the member's contribution history. It corrects the amount,
+  the received date, the month (or fee year) it covers and the note; the cash
+  book follows. A payment against the wrong member is removed and logged again.
 
 ## Look and feel
 
@@ -196,9 +205,12 @@ There is no join-date field — every member joins at the society's opening mont
 On creation, all fully-elapsed past years (2025) are recorded as paid in full,
 and the admin lands on a **payment setup window** for the current year: tick the
 months and fee already paid, and optionally enter one extra lump sum that fills
-the remaining months oldest-first and then the fee.
+the remaining months oldest-first and then the fee. Its **Received on** date
+applies to every row it records.
 
-The society is capped at **30 members**; deleting one frees a slot. **Deleting a
+The society is capped at **40 members**; deleting one frees a slot. The
+society's targets are still set for **30 members** (30 × the year's rate), so
+once more than 30 have joined, the collected total can pass 100% of target. **Deleting a
 member is permanent** — it removes the member, their login and all their payments
 — so it asks the admin to re-enter their password first. There is no
 active/inactive state.
@@ -272,12 +284,14 @@ plus one month for every month elapsed since they joined.
 
 - **Per-member statement** — `/api/reports/members/[id]/pdf`. Letterhead reads
   **Shapnik Group**, with the member's name and `M-03`-style ID, a lifetime
-  total, and a ledger (particulars, type, amount, running balance). Members can
-  only download their own.
+  total, and a ledger (particulars, type, amount, running balance). It closes
+  with a Member line and a Treasurer line carrying the treasurer's signature.
+  Members can only download their own.
 - **Monthly collection summary** — `/reports/monthly?month=YYYY-MM`
 - **Annual fund report** — `/reports/annual?year=YYYY`, PDF at
   `/api/reports/annual/[year]/pdf`, laid out for filing with the Department of
-  Cooperatives. Receipts only, since the app does not track spending.
+  Cooperatives. Receipts only, since the app does not track spending. Signed off
+  by a Secretary line and the signed Treasurer line.
 
 PDFs use the standard Helvetica fonts, which have no glyph for `৳`, so printed
 documents show `BDT` while the screen shows the Taka sign. The issue date on

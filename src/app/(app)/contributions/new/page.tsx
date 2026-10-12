@@ -4,6 +4,7 @@ import { requireWriter } from "@/lib/session";
 import { listMembers } from "@/server/members";
 import { getSocietySettings } from "@/server/progress";
 import { listYearPlans, planForMonthKey } from "@/server/years";
+import { dhakaDateKey } from "@/lib/dates";
 import { ContributionForm } from "../contribution-form";
 
 export const metadata: Metadata = { title: "Log a payment" };
@@ -39,7 +40,7 @@ export default async function NewContributionPage({
           amount: activePlan?.monthlyAmount ?? 0,
           paidForMonth: settings.activeMonthKey,
           paidForYear: Number(settings.activeMonthKey.slice(0, 4)),
-          paidOnDate: new Date().toISOString().slice(0, 10),
+          paidOnDate: dhakaDateKey(),
           note: "",
         }}
       />

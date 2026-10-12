@@ -1,5 +1,5 @@
 import { Document, Page, Text, View } from "@react-pdf/renderer";
-import { PDF_BRAND_NAME, PdfFooter, PdfLetterhead } from "./letterhead";
+import { PDF_BRAND_NAME, PdfFooter, PdfLetterhead, PdfTreasurerSignature } from "./letterhead";
 import { styles } from "./styles";
 import { pdfAmount, pdfDate, pdfIssuedOn, pdfText } from "@/lib/pdf-format";
 import { formatMonthKey } from "@/lib/dates";
@@ -113,14 +113,7 @@ export function MemberStatementDocument({ statement }: { statement: MemberStatem
             <Text style={styles.signatureLabel}>Member</Text>
             <Text style={styles.signatureHint}>Acknowledged</Text>
           </View>
-          <View style={styles.signatureBlock}>
-            <Text style={styles.signatureLabel}>Treasurer</Text>
-            <Text style={styles.signatureHint}>Certified true record</Text>
-          </View>
-          <View style={styles.signatureBlock}>
-            <Text style={styles.signatureLabel}>President</Text>
-            <Text style={styles.signatureHint}>On behalf of the society</Text>
-          </View>
+          <PdfTreasurerSignature />
         </View>
 
         <PdfFooter />

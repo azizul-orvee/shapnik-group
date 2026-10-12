@@ -41,8 +41,9 @@ model Organization {
   startMonth DateTime @default(dbgenerated("'2025-04-01'::date")) @db.Date
   endMonth   DateTime @default(dbgenerated("'2026-12-01'::date")) @db.Date
 
-  /// How many active members the society may hold. Deactivating frees a slot.
-  memberLimit Int @default(30)
+  /// How many members the society may hold. Deleting one frees a slot. Targets
+  /// do not follow this: they are fixed at 30 members (TARGET_MEMBER_COUNT).
+  memberLimit Int @default(40)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

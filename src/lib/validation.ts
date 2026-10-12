@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { dhakaDateKey } from "@/lib/dates";
 
 const monthKey = z
   .string()
@@ -16,6 +17,14 @@ const amount = z.coerce
 const isoDate = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Use a YYYY-MM-DD date");
+
+/**
+ * The day money was actually handed over. Any past day is fine (the admin
+ * backfills real dates), but never a day after today in Dhaka.
+ */
+const receivedDate = isoDate.refine((value) => value <= dhakaDateKey(), {
+  message: "The received date cannot be in the future",
+});
 
 /**
  * Bangladeshi NIDs are usually 10, 13 or 17 digits, but older and reissued
@@ -103,7 +112,7 @@ export const contributionCreateSchema = z
     amount,
     paidForMonth: monthKey.optional().or(z.literal("")),
     paidForYear: z.coerce.number().int().min(2000).max(2100).optional(),
-    paidOnDate: isoDate,
+    paidOnDate: receivedDate,
     note,
   })
   .refine((v) => v.type !== "MONTHLY" || Boolean(v.paidForMonth), {
@@ -124,7 +133,7 @@ export const contributionUpdateSchema = z.object({
   amount: amount.optional(),
   paidForMonth: monthKey.optional(),
   paidForYear: z.coerce.number().int().min(2000).max(2100).optional(),
-  paidOnDate: isoDate.optional(),
+  paidOnDate: receivedDate.optional(),
   note,
 });
 
@@ -133,7 +142,7 @@ export const bulkContributionSchema = z.object({
   memberIds: z.array(z.string().min(1)).min(1, "Select at least one member"),
   amount,
   paidForMonth: monthKey,
-  paidOnDate: isoDate,
+  paidOnDate: receivedDate,
 });
 
 /**
@@ -144,7 +153,7 @@ export const lumpSumSchema = z.object({
   memberId: z.string().min(1, "Choose a member"),
   amount,
   paidForYear: z.coerce.number().int().min(2000).max(2100),
-  paidOnDate: isoDate,
+  paidOnDate: receivedDate,
   /** Record a remainder too small for a whole month as a short payment. */
   allowPartialMonth: z.coerce.boolean().default(true),
   note,
@@ -166,7 +175,7 @@ export const initialSetupSchema = z
       .min(0, "Amount cannot be negative")
       .max(99_999_999, "Amount is too large")
       .default(0),
-    paidOnDate: isoDate,
+    paidOnDate: receivedDate,
     note,
   })
   .refine((v) => v.tickedMonths.length > 0 || v.feeTicked || v.boxAmount > 0, {

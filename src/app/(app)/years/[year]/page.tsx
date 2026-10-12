@@ -86,7 +86,7 @@ export default async function YearDetailPage({ params }: PageProps<"/years/[year
                 {formatTakaShort(progress.totalCollected)}
               </p>
               <p className="text-muted-foreground mt-1 text-sm">
-                of {formatTakaShort(progress.totalTarget)} target · {progress.memberCount} members ×{" "}
+                of {formatTakaShort(progress.totalTarget)} target · {progress.targetMemberCount} members ×{" "}
                 {formatTakaShort(plan.annualTarget)}
               </p>
             </div>

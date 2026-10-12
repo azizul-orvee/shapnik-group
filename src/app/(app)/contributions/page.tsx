@@ -22,8 +22,20 @@ import { CoversLabel } from "@/components/app/covers-label";
 import { listContributions } from "@/server/contributions";
 import { resolveMonth } from "@/server/progress";
 import { DeleteContributionButton } from "./delete-contribution";
+import { EditContributionLink } from "./edit-contribution-link";
 
 export const metadata: Metadata = { title: "Collections" };
+
+function paymentLabel(contribution: {
+  member: { name: string };
+  paidForMonth: Date | null;
+}): string {
+  return `${contribution.member.name} — ${
+    contribution.paidForMonth
+      ? formatMonthKey(dateToMonthKey(contribution.paidForMonth))
+      : "one-time fee"
+  }`;
+}
 
 export default async function ContributionsPage({ searchParams }: PageProps<"/contributions">) {
   const session = await requireOrgReader();
@@ -114,14 +126,17 @@ export default async function ContributionsPage({ searchParams }: PageProps<"/co
                       {formatTakaShort(contribution.amount)}
                     </p>
                     {writable ? (
-                      <DeleteContributionButton
-                        contributionId={contribution.id}
-                        label={`${contribution.member.name} — ${
-                          contribution.paidForMonth
-                            ? formatMonthKey(dateToMonthKey(contribution.paidForMonth))
-                            : "one-time fee"
-                        }`}
-                      />
+                      <div className="flex items-center">
+                        <EditContributionLink
+                          contributionId={contribution.id}
+                          label={paymentLabel(contribution)}
+                          back={`/contributions?month=${monthKey}`}
+                        />
+                        <DeleteContributionButton
+                          contributionId={contribution.id}
+                          label={paymentLabel(contribution)}
+                        />
+                      </div>
                     ) : null}
                   </div>
                 </div>
@@ -136,7 +151,7 @@ export default async function ContributionsPage({ searchParams }: PageProps<"/co
                   <TableHead>Covers</TableHead>
                   <TableHead>Received</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
-                  {writable ? <TableHead className="w-12" /> : null}
+                  {writable ? <TableHead className="w-24" /> : null}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -166,14 +181,17 @@ export default async function ContributionsPage({ searchParams }: PageProps<"/co
                     </TableCell>
                     {writable ? (
                       <TableCell className="text-right">
-                        <DeleteContributionButton
-                          contributionId={contribution.id}
-                          label={`${contribution.member.name} — ${
-                            contribution.paidForMonth
-                              ? formatMonthKey(dateToMonthKey(contribution.paidForMonth))
-                              : "one-time fee"
-                          }`}
-                        />
+                        <div className="flex items-center justify-end">
+                          <EditContributionLink
+                            contributionId={contribution.id}
+                            label={paymentLabel(contribution)}
+                            back={`/contributions?month=${monthKey}`}
+                          />
+                          <DeleteContributionButton
+                            contributionId={contribution.id}
+                            label={paymentLabel(contribution)}
+                          />
+                        </div>
                       </TableCell>
                     ) : null}
                   </TableRow>

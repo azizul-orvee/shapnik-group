@@ -140,10 +140,6 @@ do not reintroduce them.
 - There is no email login. `User.email` still exists but nothing authenticates
   with it.
 
-  `1`) or a member's `memberId`. Unique per organisation.
-- `User.passwordHash` is bcrypt of their NID. The admin's comes from `ADMIN_NID`.
-- `User.email` still exists but nothing signs in with it.
-
 An admin registers a member with **name, member ID, phone, NID, nominee name and
 nominee NID**; nominee phone is the only optional field. Every phone needs at
 least 10 digits and may start with `+` and contain spaces (`+880 1712 345678`) —
@@ -174,8 +170,17 @@ working.
 `redactMember()` masks `nationalId` and `nomineeNationalId` for non-admins; the
 member API routes and the member detail page both apply it.
 
-`Organization.memberLimit` (default **30**) caps members; deleting one frees a
+`Organization.memberLimit` (default **40**) caps members; deleting one frees a
 slot. `createMember()` enforces it.
+
+**Society targets are fixed at 30 members, not the headcount.**
+`getSocietyProgress()` multiplies the year's rates by `TARGET_MEMBER_COUNT`
+(30, in `src/server/progress.ts`) for `totalTarget`, `monthlyTarget` and
+`oneTimeTarget`. Members 31–40 are ordinary members with their own dues, and
+their money counts as collected, so society `completion` is **not capped** and
+can pass 100%. Member counts (`memberCount`, the "fully paid" and "cleared the
+fee" counts, the monthly paid/pending chart) stay on the real headcount.
+Label a target as `targetMemberCount` members × the rate, never `memberCount`.
 
 The **admin** fills in their own details at `/profile` (`PATCH /api/profile`) —
 never anyone else's. A **member** sees `/profile` as a read-only copy of their
@@ -223,6 +228,9 @@ seeded.
 - **`paidForYear` is required** on every contribution. For `MONTHLY` it is the
   year of `paidForMonth`; for `ONE_TIME` the treasurer picks the year. Progress
   counts the extra fee by `paidForYear`, not by `paidOnDate`.
+- **`paidOnDate` may be backdated, never future-dated.** Validate it with
+  `receivedDate` from `validation.ts` on any new payment path, and default date
+  inputs to `dhakaDateKey()`, not `new Date().toISOString()`.
 - **Money is `Decimal`.** Call `.toNumber()` only at the edge, when formatting.
   Use `formatTaka` / `formatTakaShort` from `src/lib/money.ts`.
 - **Members are permanently deleted.** `DELETE /api/members/[id]` removes the

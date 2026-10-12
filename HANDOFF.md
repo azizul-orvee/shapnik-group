@@ -16,7 +16,7 @@ Every change keeps all three current, in the same piece of work — see
 ## 1. What this is
 
 A savings-management app for **Shapnik Group**, a Bangladeshi cooperative of
-~30 members. The treasurer records payments; the app tracks who has
+30–40 members. The treasurer records payments; the app tracks who has
 paid, who is behind, and produces the reports the Department of Cooperatives asks
 for.
 
@@ -201,8 +201,9 @@ src/
                     2025–2026 cannot be edited; 2027+ is admin-added (not seeded).
     members.ts      listMembers, findMember/getMember (+WithContributions),
                     createMember, updateMember, deleteMember, suggestMemberCode
-    contributions.ts listContributions, createContribution, createContributionsBulk,
-                    updateContribution, deleteContribution, getDuesForMonth,
+    contributions.ts listContributions, getContribution, createContribution,
+                    createContributionsBulk, updateContribution, deleteContribution,
+                    getDuesForMonth,
                     getYearObligation, recordLumpSum, recordInitialSetup,
                     ledgerDescription (exported for the member auto-settlement)
     fund.ts         getFundTotals, getFundGrowth (+ dormant spending fns, see §8)
@@ -227,6 +228,7 @@ src/
 | `/members`, `/members/new`, `/members/[id]`, `/members/[id]/edit` | org readers / writers | |
 | `/members/[id]/setup` | writers | record a new member's initial payments (shown right after creation) |
 | `/contributions`, `/contributions/new` | org readers / writers | |
+| `/contributions/[id]/edit` | writers | correct a payment: amount, received date, covered month/year, note. `?back=` (same-site path only) sets where it returns |
 | `/dues` | org readers | per-month paid/pending + bulk collect |
 | `/fund` | org readers | totals, growth chart, recent payments |
 | `/reports`, `/reports/monthly`, `/reports/annual` | org readers | |
@@ -305,7 +307,14 @@ member can read.
   still allowing several fee instalments for the same year.
 - `paidOnDate` is when money changed hands; `paidForMonth` / `paidForYear` is what
   it settles. **These differ for advance payments** and a lot of logic depends on
-  which you use.
+  which you use. Admins may backdate it to any past day; every payment schema
+  validates it with `receivedDate` (`validation.ts`), which refuses a day after
+  today in Dhaka. Form defaults use `dhakaDateKey()`, never
+  `new Date().toISOString()` (that is UTC and reads yesterday before 6 am Dhaka).
+- **Editing.** `updateContribution()` changes amount, `paidOnDate`, note, and the
+  month (MONTHLY) or `paidForYear` (ONE_TIME), moving the linked cash-book row in
+  the same transaction. Member and type are fixed; a month cannot be put on a
+  fee instalment, and a monthly payment's year always follows its month.
 
 **FundTransaction** — the cash book. Every contribution creates a linked `IN` row
 in the *same* `prisma.$transaction`, so the ledger can never drift. Rows with a
@@ -343,9 +352,17 @@ optional `memberId`.
   `nomineeName`, `nomineeNationalId`, `nomineePhone`), all **nullable** — they
   fill them in at `/profile` whenever they like.
 
-**Member cap.** `Organization.memberLimit` (default **30**) limits **active**
-members. `createMember()` enforces it and returns 409 when full; deleting a
-member frees a slot.
+**Member cap.** `Organization.memberLimit` (default **40**, raised from 30 by
+migration `20261012180000_member_limit_40`) limits members. `createMember()`
+enforces it and returns 409 when full; deleting a member frees a slot.
+
+**Targets stay at 30.** The cap and the target are deliberately different. The
+society-wide target is `plan.annualTarget × TARGET_MEMBER_COUNT` (30), fixed
+whatever the headcount (`getSocietyProgress()` in `progress.ts`). Members 31–40
+owe their own dues like anyone else and their payments count as collected, so
+society completion is uncapped and may read over 100%. Headcounts — members,
+fully paid, fee cleared, and the monthly paid/pending chart's "expected" — use
+the real number of members.
 
 ### Migrations
 
@@ -358,6 +375,7 @@ member frees a slot.
 20260902161835_member_kyc_and_member_logins  NID + nominee fields, member logins, member cap
 20260902164832_two_roles_and_admin_profile   drop COMMITTEE/TREASURER, admin profile fields
 20260902171828_admin_third_factor           User.adminPasswordHash
+20261012180000_member_limit_40              memberLimit default 30 → 40, existing rows lifted
 ```
 
 ⚠️ `prisma migrate dev` **fails against the local `prisma dev` server** — its
@@ -495,7 +513,13 @@ wrong produces a wall of resolver type errors.
    in the Vercel trace via `outputFileTracingIncludes` in `next.config.ts`.
    Member statements are a bank-style ledger (running balance, closing band)
    branded **Shapnik Group**; member codes print as `M-03`. Chrome is brand teal,
-   never the viz palette.
+   never the viz palette. No PDF has a President line. Every PDF ends with
+   `PdfTreasurerSignature` (`pdf/letterhead.tsx`): the Treasurer line carrying
+   the treasurer's handwritten signature, a transparent PNG at
+   `src/components/pdf/assets/treasurer-signature.png` (loaded in `pdf/logo.ts`,
+   traced by the same `assets/**` include). The statement pairs it with an
+   unsigned Member line, the annual report with an unsigned Secretary line. To
+   change signer, replace that PNG.
 
 9. **Client importing `server-only` `years.ts`.** Contribution forms need
    `planForMonthKey` — it lives in `src/lib/dates.ts`. Importing `years.ts` from a

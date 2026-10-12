@@ -77,7 +77,7 @@ export default async function DashboardPage() {
               </p>
               <p className="text-muted-foreground mt-2 text-sm">
                 of {formatTakaShort(progress.totalTarget)} target ·{" "}
-                {progress.memberCount} members × {formatTakaShort(progress.plan.annualTarget)}
+                {progress.targetMemberCount} members × {formatTakaShort(progress.plan.annualTarget)}
               </p>
             </div>
 

@@ -22,7 +22,13 @@ import {
   type ContributionFormInput,
 } from "@/lib/validation";
 import { apiRequest, ApiRequestError } from "@/lib/http";
-import { currentMonthKey, formatMonthKey, monthRange, planForMonthKey } from "@/lib/dates";
+import {
+  currentMonthKey,
+  dhakaDateKey,
+  formatMonthKey,
+  monthRange,
+  planForMonthKey,
+} from "@/lib/dates";
 
 export type MemberOption = { id: string; name: string; memberId: string };
 
@@ -214,8 +220,13 @@ export function ContributionForm({
         />
       </Field>
 
-      <Field id="paidOnDate" label="Received on" error={errors.paidOnDate?.message}>
-        <Input id="paidOnDate" type="date" {...register("paidOnDate")} />
+      <Field
+        id="paidOnDate"
+        label="Received on"
+        error={errors.paidOnDate?.message}
+        hint="The day the member actually paid — pick an earlier date when entering an old payment."
+      >
+        <Input id="paidOnDate" type="date" max={dhakaDateKey()} {...register("paidOnDate")} />
       </Field>
 
       <Field id="note" label="Note" error={errors.note?.message} hint="Optional.">

@@ -38,6 +38,7 @@ export function InitialPaymentsForm({
   const [ticked, setTicked] = useState<Record<string, boolean>>({});
   const [feeTicked, setFeeTicked] = useState(false);
   const [box, setBox] = useState("");
+  const [paidOnDate, setPaidOnDate] = useState(today);
   const [submitting, setSubmitting] = useState(false);
 
   const feeDue = Math.max(0, oneTimeFee - oneTimePaid);
@@ -73,7 +74,7 @@ export function InitialPaymentsForm({
         `/api/members/${memberId}/setup`,
         {
           method: "POST",
-          body: { paidForYear: year, tickedMonths, feeTicked, boxAmount, paidOnDate: today },
+          body: { paidForYear: year, tickedMonths, feeTicked, boxAmount, paidOnDate },
         },
       );
       toast.success(
@@ -169,6 +170,22 @@ export function InitialPaymentsForm({
             placeholder="0"
             value={box}
             onChange={(e) => setBox(e.target.value)}
+          />
+        </Field>
+      </section>
+
+      <section className="space-y-1.5">
+        <Field
+          id="setup-date"
+          label="Received on"
+          hint="When the member handed this money over. Every row recorded here gets this date; correct any one later from its Edit button."
+        >
+          <Input
+            id="setup-date"
+            type="date"
+            max={today}
+            value={paidOnDate}
+            onChange={(e) => setPaidOnDate(e.target.value)}
           />
         </Field>
       </section>

@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Field } from "@/components/app/field";
 import { apiRequest } from "@/lib/http";
-import { formatMonthKey } from "@/lib/dates";
+import { dhakaDateKey, formatMonthKey } from "@/lib/dates";
 
 export type PendingMember = { memberId: string; memberCode: string; name: string };
 
@@ -37,7 +37,7 @@ export function QuickCollect({
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [amount, setAmount] = useState(suggestedAmount ? String(suggestedAmount) : "");
-  const [paidOnDate, setPaidOnDate] = useState(new Date().toISOString().slice(0, 10));
+  const [paidOnDate, setPaidOnDate] = useState(dhakaDateKey());
   const [submitting, setSubmitting] = useState(false);
 
   const allSelected = selected.size === pending.length && pending.length > 0;
@@ -119,6 +119,7 @@ export function QuickCollect({
             <Input
               id="bulk-date"
               type="date"
+              max={dhakaDateKey()}
               value={paidOnDate}
               onChange={(event) => setPaidOnDate(event.target.value)}
             />
