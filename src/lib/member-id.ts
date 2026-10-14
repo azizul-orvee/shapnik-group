@@ -13,8 +13,12 @@ export function memberIdKey(memberId: string): string {
 }
 
 /**
- * Passbook form: numeric IDs print as `M-03`, never `M-003`. Non-numeric IDs
- * (the admin login, custom codes) are returned uppercased as stored.
+ * The one written form of a member ID: numeric IDs become `M-03` (never
+ * `M-003`), whether typed as "3", "03", "m3" or "M-003". Non-numeric IDs (the
+ * admin login, custom codes) are returned uppercased.
+ *
+ * IDs are stored in this form, and member sign-in looks the typed ID up in it,
+ * so "13" and "M-13" reach the same member.
  */
 export function formatMemberCode(memberId: string): string {
   const key = memberIdKey(memberId);

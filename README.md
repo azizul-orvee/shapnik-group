@@ -126,13 +126,13 @@ and 2026 collections up to today.
 | Sign in as | Where | Credentials |
 | --- | --- | --- |
 | Admin | `/control_panel` | ID, NID and password from `.env` |
-| Member | `/login` | `M-003` + the NID the seed prints |
+| Member | `/login` | `M-03` (or just `3`) + the NID the seed prints |
 
 The admin's credentials come from `ADMIN_LOGIN_ID`, `ADMIN_NID` and
 `ADMIN_PASSWORD` (plus `ADMIN_NAME`). The on-screen name is **Shapnik Group**
 (`BRAND_NAME`); `SEED_ORG_NAME` is the organisation row, defaulting to the same.
 Every member has a login of their member ID plus their NID; the seed prints
-M-003's on completion. Real values live in `.env`, which is gitignored —
+M-03's on completion. Real values live in `.env`, which is gitignored —
 `.env.example` ships placeholders.
 
 ## Going to production
@@ -179,7 +179,7 @@ There are two separate sign-in pages.
 
 | Who | Where | Credentials |
 | --- | --- | --- |
-| Member | `/login` | member ID + their NID number |
+| Member | `/login` | member ID (`13` or `M-13`, either works) + their NID number |
 | Admin | `/control_panel` | admin ID + NID + a separate password |
 
 The admin door needs all three factors, and the member door refuses admins
@@ -196,8 +196,9 @@ login.
 
 The admin registers each member with their name, member ID, phone, NID, nominee
 name and nominee NID (nominee phone optional). A phone number needs at least 10
-digits and may include a leading + and spaces, e.g. +880 1712 345678. Their
-login is created automatically. Correcting a member's NID or ID also moves their
+digits and may include a leading + and spaces, e.g. +880 1712 345678. A
+numeric member ID is saved in passbook form — type `32` or `M-32` and it is
+saved and shown as `M-32`. Their login is created automatically. Correcting a member's NID or ID also moves their
 login, so the details on screen are always the ones that work. Member IDs are
 stored uppercased, and `M-01`, `M01`, `01` and `1` count as the same ID, so only
 one of them can exist.

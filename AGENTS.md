@@ -145,12 +145,16 @@ nominee NID**; nominee phone is the only optional field. Every phone needs at
 least 10 digits and may start with `+` and contain spaces (`+880 1712 345678`) —
 `PHONE_PATTERN` in `src/lib/validation.ts`. There is **no join-date
 field** — every member joins at the society's opening month
-(`Organization.startMonth`). Member IDs are stored **uppercased**, and IDs that
-differ only by an `M`/`M-` prefix or leading zeros are the **same ID** — `M-01`,
-`M01`, `01` and `1` cannot coexist. Check clashes with `memberIdKey()` from
+(`Organization.startMonth`). Member IDs are **stored in passbook form**:
+`memberCreateSchema` runs them through `formatMemberCode()`, so `32`, `m32` and
+`M-032` are all saved as `M-32` (`7` → `M-07`, never `M-007`); non-numeric IDs
+are just uppercased. IDs that differ only by an `M`/`M-` prefix or leading zeros
+are the **same ID** — check clashes with `memberIdKey()` from
 `src/lib/member-id.ts`, never by comparing strings; the database index only
-catches exact repeats. Sign-in still matches the ID exactly as stored.
-Print form is `formatMemberCode()` (`M-03`, never `M-003`) — PDFs use that.
+catches exact repeats. **Member sign-in** (`member-login`) looks up
+`formatMemberCode(identifier)`, so `13` and `M-13` reach the same member. Admin
+sign-in still matches its ID exactly. Any new path that writes a member ID must
+store it in this form, and keep `User.username` equal to it.
 `createMember()` creates their login in the same
 transaction and, in that same transaction, **auto-settles every fully-elapsed
 past year** (2025) as paid in full — each in-season month plus the year's fee,

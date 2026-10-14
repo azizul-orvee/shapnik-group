@@ -129,7 +129,7 @@ async function main() {
   };
   const members: SeedMember[] = [];
   for (const [index, name] of FIRST_NAMES.entries()) {
-    const code = `M-${String(index + 1).padStart(3, "0")}`;
+    const code = `M-${String(index + 1).padStart(2, "0")}`;
     // Deterministic stand-ins so the sample data is usable; real NIDs come from
     // whatever the admin types in.
     const nationalId = `1990${String(100000 + index * 7).padStart(6, "0")}`;

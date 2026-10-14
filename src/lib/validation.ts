@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { dhakaDateKey } from "@/lib/dates";
+import { formatMemberCode } from "@/lib/member-id";
 
 const monthKey = z
   .string()
@@ -74,9 +75,9 @@ export const memberCreateSchema = z.object({
     .min(1, "Member ID is required")
     .max(24)
     .regex(/^[A-Za-z0-9-]+$/, "Letters, numbers and hyphens only")
-    // Uppercased so an ID is unique regardless of case — "m-1" and "M-1" are
-    // the same member, and the DB's unique index is on this stored value.
-    .transform((v) => v.toUpperCase()),
+    // Stored in passbook form — "32", "m32" and "M-032" all become "M-32" —
+    // so every screen shows the same ID and sign-in can look it up exactly.
+    .transform(formatMemberCode),
   phone: phoneNumber,
   nationalId,
   nomineeName: z.string().trim().min(2, "Nominee name is required").max(120),

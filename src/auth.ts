@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { authConfig } from "@/auth.config";
+import { formatMemberCode } from "@/lib/member-id";
 import { prisma } from "@/lib/prisma";
 import { adminLoginSchema, loginSchema } from "@/lib/validation";
 import type { Role } from "@/generated/prisma/enums";
@@ -56,7 +57,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const parsed = loginSchema.safeParse(credentials);
         if (!parsed.success) return null;
 
-        const user = await findByUsername(parsed.data.identifier);
+        // Member usernames are stored in passbook form, so "13", "m13" and
+        // "M-13" all sign in as M-13.
+        const user = await findByUsername(formatMemberCode(parsed.data.identifier));
         if (!user) {
           await bcrypt.compare(parsed.data.password, DUMMY_HASH);
           return null;

@@ -44,7 +44,7 @@ export function LoginForm() {
           className="h-11"
         />
         <p className="text-muted-foreground text-xs">
-          The member ID on your passbook, e.g. M-014.
+          The member ID on your passbook, e.g. M-14 or just 14.
         </p>
       </div>
 

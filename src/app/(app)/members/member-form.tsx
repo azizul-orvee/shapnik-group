@@ -72,7 +72,7 @@ export function MemberForm({ memberId, defaultValues }: Props) {
         id="memberId"
         label="Member ID"
         error={errors.memberId?.message}
-        hint="Shown on the passbook, e.g. M-014. Must be unique in the society."
+        hint="Type 14 or M-14 — it is saved as M-14. Must be unique in the society."
       >
         <Input id="memberId" autoCapitalize="characters" {...register("memberId")} />
       </Field>

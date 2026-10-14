@@ -273,9 +273,13 @@ kept in sync with YearPlan rows.
 seed or migrate a placeholder 2027 row.
 
 **Member** — `memberId` is the passbook code, unique per org, and doubles as the
-member's sign-in username, stored **uppercased**. IDs that differ only by an
-`M`/`M-` prefix or leading zeros are the same ID (`memberIdKey()` in
-`src/lib/member-id.ts`), so `M-01` and `01` cannot both exist. The DB index only
+member's sign-in username, stored in **passbook form** via `formatMemberCode()`
+(`32` → `M-32`, `7` → `M-07`; non-numeric IDs uppercased). Member sign-in runs
+the typed ID through the same function, so `13` and `M-13` both work. IDs that
+differ only by an `M`/`M-` prefix or leading zeros are the same ID
+(`memberIdKey()` in `src/lib/member-id.ts`), so `M-01` and `01` cannot both
+exist. Migration `20261014120000_member_id_passbook_form` rewrote older rows
+(and their `User.username`) into this form. The DB index only
 catches exact repeats, so `createMember()` / `updateMember()` do the check.
 Members are **permanently deleted** — `DELETE /api/members/[id]` removes the
 member, their login, contributions and linked cash-book rows in one
@@ -558,6 +562,11 @@ wrong produces a wall of resolver type errors.
     the prefix and leading zeros. The database index is still on the exact
     text, so the check has to stay in `src/server/members.ts`.
 
+14. **Typing `32` saved and showed `32`, and members had to sign in with the
+    exact stored text.** IDs are now stored as `formatMemberCode()` gives them
+    (`M-32`), and member sign-in looks up the same form, so `13` and `M-13`
+    both sign in.
+
 ### Verification gotchas
 
 - **Status codes are not proof.** A page that throws renders `error.tsx` with a
@@ -640,7 +649,7 @@ npm run dev
 | Sign in as | Where | Credentials |
 | --- | --- | --- |
 | Admin | `/control_panel` | `ADMIN_LOGIN_ID` + `ADMIN_NID` + `ADMIN_PASSWORD`, all from `.env` |
-| Member | `/login` | `M-003` + the NID the seed prints — paid 2025 in full and all of 2026 on 5 Jan 2026 |
+| Member | `/login` | `M-03` (or just `3`) + the NID the seed prints — paid 2025 in full and all of 2026 on 5 Jan 2026 |
 
 
 
