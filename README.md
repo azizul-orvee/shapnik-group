@@ -164,11 +164,12 @@ payments, and rotating `ADMIN_LOGIN_ID` deletes the superseded admin login.
 | Script | What it does |
 | --- | --- |
 | `npm run dev` | Development server |
-| `npm run build` | `prisma generate` then a production build |
+| `npm run build` | `prisma generate` then a production build (never migrates) |
+| `npm run vercel-build` | What Vercel runs: as `build`, plus `prisma migrate deploy` on production deploys |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint |
 | `npm run db:migrate` | Create and apply a migration (development) |
-| `npm run db:deploy` | Apply pending migrations (production) |
+| `npm run db:deploy` | Apply pending migrations by hand (production deploys do it automatically) |
 | `npm run db:seed` | Load sample data |
 | `npm run db:studio` | Prisma Studio |
 
@@ -303,9 +304,12 @@ the letterhead is Bangladesh time (`Asia/Dhaka`).
    connection string; set `SHADOW_DATABASE_URL` to a direct connection if you plan
    to run `prisma migrate dev` against it.
 2. Set `AUTH_SECRET`, and `AUTH_TRUST_HOST=true` if the host is not auto-detected.
-3. Deploy. `postinstall` runs `prisma generate`.
-4. Run `npm run db:deploy` against the production database to apply migrations,
-   then seed or create the first admin account.
+3. Deploy. Vercel runs `npm run vercel-build`, which applies pending migrations
+   (`prisma migrate deploy`) on **production** deployments before building, over
+   `DATABASE_URL_UNPOOLED` when it is set. Preview deployments never migrate. A
+   failed migration fails the deploy, so new code never runs on an old schema.
+4. On the first deploy, run `npm run db:bootstrap` against production to create
+   the organisation, year plans and admin login.
 
 `@react-pdf/renderer` and `pg` are listed in `serverExternalPackages` so they run
 as real Node modules rather than being bundled.

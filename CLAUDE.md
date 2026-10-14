@@ -15,7 +15,7 @@ have already bitten, read `HANDOFF.md` before changing anything non-trivial.
 | `npm run dev` | Dev server (also regenerates route types via `next typegen`) |
 | `npm run typecheck` / `npm run lint` / `npm run build` | The pre-finish gate — run all three; `build` runs `prisma generate` first |
 | `npm run db:migrate` | `prisma migrate dev` — create + apply a migration |
-| `npm run db:deploy` | Apply pending migrations (production) |
+| `npm run db:deploy` | Apply pending migrations by hand — Vercel production deploys run it via `vercel-build` |
 | `npm run db:seed` | Dev sample data — **never against production** |
 | `npm run db:bootstrap` | Production first run — org, year plans, admin only |
 | `npm run db:studio` | Prisma Studio |

@@ -625,11 +625,12 @@ npm run dev
 | Script | Does |
 | --- | --- |
 | `npm run dev` | dev server |
-| `npm run build` | `prisma generate && next build` |
+| `npm run build` | `prisma generate && next build` — never migrates |
+| `npm run vercel-build` | Vercel's build: also `prisma migrate deploy` on production deploys |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | eslint |
 | `npm run db:migrate` | create + apply a migration (development) |
-| `npm run db:deploy` | apply pending migrations (production) |
+| `npm run db:deploy` | apply pending migrations by hand (production deploys do it automatically) |
 | `npm run db:bootstrap` | **production first run** — org + year plans + admin, no members |
 | `npm run db:seed` | development sample data (30 fictional members) |
 | `npm run db:studio` | Prisma Studio |
@@ -696,8 +697,16 @@ against an empty schema: 1 organisation, 2 year plans, 1 admin, **0 members**.
    string; `SHADOW_DATABASE_URL` to a direct connection if you will run
    `migrate dev` against it.
 2. Set `AUTH_SECRET`, and `AUTH_TRUST_HOST=true` if the host is not auto-detected.
-3. Deploy. `postinstall` runs `prisma generate`.
-4. Run `npm run db:deploy` against production, then seed or create the first admin.
+3. Deploy. Vercel runs `npm run vercel-build`: `prisma generate`, then
+   `prisma migrate deploy` **only when `VERCEL_ENV=production`** (over
+   `DATABASE_URL_UNPOOLED` if set, since migrations want a direct connection),
+   then `next build`. Previews skip migrations so a branch can never migrate the
+   live database. A failed migration fails the deploy.
+4. On the first deploy, run `npm run db:bootstrap` against production.
+
+Before `vercel-build` existed, deploys never migrated: the 30 → 40 member-cap
+migration sat unapplied on production for days and the live app kept refusing
+member 31. Local `npm run build` deliberately still does not migrate.
 
 `@react-pdf/renderer` and `pg` are in `serverExternalPackages` (`next.config.ts`)
 so they run as real Node modules instead of being bundled. Keep them there.
