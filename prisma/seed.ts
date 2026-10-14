@@ -59,13 +59,13 @@ function monthsFromTo(start: Date, end: Date): Date[] {
 async function main() {
   const organization = await prisma.organization.upsert({
     where: { id: "seed-org" },
-    update: { name: ORG_NAME, startMonth: JOIN_DATE, endMonth: WINDOW_END, memberLimit: 30 },
+    update: { name: ORG_NAME, startMonth: JOIN_DATE, endMonth: WINDOW_END, memberLimit: 40 },
     create: {
       id: "seed-org",
       name: ORG_NAME,
       startMonth: JOIN_DATE,
       endMonth: WINDOW_END,
-      memberLimit: 30,
+      memberLimit: 40,
     },
   });
 

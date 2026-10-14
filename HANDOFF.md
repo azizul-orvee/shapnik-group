@@ -355,6 +355,10 @@ optional `memberId`.
 **Member cap.** `Organization.memberLimit` (default **40**, raised from 30 by
 migration `20261012180000_member_limit_40`) limits members. `createMember()`
 enforces it and returns 409 when full; deleting a member frees a slot.
+`bootstrap.ts` (env `MEMBER_LIMIT`, default 40) and `seed.ts` also write the
+limit, and bootstrap does so on every run, so keep their defaults at 40 too.
+Both once still said 30, which put the cap back to 30 on a re-run or a fresh
+seed.
 
 **Targets stay at 30.** The cap and the target are deliberately different. The
 society-wide target is `plan.annualTarget × TARGET_MEMBER_COUNT` (30), fixed

@@ -32,7 +32,7 @@ const ADMIN_LOGIN_ID = process.env.ADMIN_LOGIN_ID;
 const ADMIN_NID = process.env.ADMIN_NID;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const ADMIN_NAME = process.env.ADMIN_NAME ?? "Society Admin";
-const MEMBER_LIMIT = Number(process.env.MEMBER_LIMIT ?? 30);
+const MEMBER_LIMIT = Number(process.env.MEMBER_LIMIT ?? 40);
 
 const YEAR_PLANS = [
   {
